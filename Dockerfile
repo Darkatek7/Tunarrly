@@ -5,6 +5,7 @@ COPY Tunarrly.slnx ./
 COPY Tunarrly.Core/Tunarrly.Core.csproj Tunarrly.Core/
 COPY Tunarrly.Infrastructure/Tunarrly.Infrastructure.csproj Tunarrly.Infrastructure/
 COPY Tunarrly.Web/Tunarrly.Web.csproj Tunarrly.Web/
+COPY Tunarrly.Tests/Tunarrly.Tests.csproj Tunarrly.Tests/
 RUN dotnet restore Tunarrly.slnx
 
 COPY . .
@@ -20,4 +21,5 @@ COPY --from=build --chown=$APP_UID:0 /app/publish .
 USER $APP_UID
 EXPOSE 8080
 VOLUME ["/app/data"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD dotnet --info >/dev/null || exit 1
 ENTRYPOINT ["dotnet", "Tunarrly.Web.dll"]

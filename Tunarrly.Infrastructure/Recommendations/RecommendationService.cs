@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tunarrly.Core.Models;
 using Tunarrly.Core.Normalization;
+using Tunarrly.Core.Recommendations;
 using Tunarrly.Core.Services;
 using Tunarrly.Infrastructure.Data;
 
@@ -11,7 +12,8 @@ public sealed class RecommendationService(
     IDbContextFactory<TunarrlyDbContext> dbFactory,
     IAiProviderClient aiClient,
     ILidarrClient lidarrClient,
-    ILidarrSyncService lidarrSync) : IRecommendationService
+    ILidarrSyncService lidarrSync,
+    IAppSettingsService settings) : IRecommendationService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -67,7 +69,15 @@ public sealed class RecommendationService(
     public async Task<OperationResult> GenerateAiAsync(CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-        var run = new AiRecommendationRun { Status = JobStatuses.Running, StartedAt = DateTimeOffset.UtcNow };
+        var options = await settings.GetAiOptionsAsync(cancellationToken);
+        var run = new AiRecommendationRun
+        {
+            Status = JobStatuses.Running,
+            ProviderBaseUrl = options.BaseUrl,
+            Model = options.Model,
+            InputSummaryJson = await BuildAiInputSummaryAsync(db, cancellationToken),
+            StartedAt = DateTimeOffset.UtcNow
+        };
         db.AiRecommendationRuns.Add(run);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -146,21 +156,35 @@ public sealed class RecommendationService(
         }
 
         if (existing.Status == RecommendationStatuses.Ignored) return;
-        var reasons = ReadList(existing.ReasonJson).Concat(candidate.Reasons).Distinct().ToArray();
-        var related = ReadList(existing.RelatedArtistsJson).Concat(candidate.RelatedArtists).Distinct().ToArray();
-        var genres = ReadList(existing.GenresJson).Concat(candidate.Genres).Distinct().ToArray();
-        existing.Score = Math.Max(existing.Score, Math.Clamp(candidate.Score, 0, 100));
-        existing.Confidence = Math.Max(existing.Confidence ?? 0, candidate.Confidence ?? 0);
-        existing.Source = existing.Source == candidate.Source ? existing.Source : RecommendationSources.Hybrid;
-        existing.ReasonJson = JsonSerializer.Serialize(reasons, JsonOptions);
-        existing.RelatedArtistsJson = JsonSerializer.Serialize(related, JsonOptions);
-        existing.GenresJson = JsonSerializer.Serialize(genres, JsonOptions);
+        var merged = RecommendationMerger.Merge(
+            new RecommendationCandidate(existing.ArtistName, existing.Score, existing.Confidence, existing.Source, ReadList(existing.ReasonJson), ReadList(existing.RelatedArtistsJson), ReadList(existing.GenresJson)),
+            candidate);
+        existing.Score = merged.Score;
+        existing.Confidence = merged.Confidence;
+        existing.Source = merged.Source;
+        existing.ReasonJson = JsonSerializer.Serialize(merged.Reasons, JsonOptions);
+        existing.RelatedArtistsJson = JsonSerializer.Serialize(merged.RelatedArtists, JsonOptions);
+        existing.GenresJson = JsonSerializer.Serialize(merged.Genres, JsonOptions);
         existing.LastCalculatedAt = DateTimeOffset.UtcNow;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     private static IReadOnlyList<string> ReadList(string json)
         => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, JsonOptions) ?? Array.Empty<string>();
+
+    private static async Task<string> BuildAiInputSummaryAsync(TunarrlyDbContext db, CancellationToken cancellationToken)
+    {
+        var summary = new
+        {
+            lidarrArtists = await db.LidarrArtists.CountAsync(cancellationToken),
+            libraryArtists = await db.LibraryArtists.CountAsync(cancellationToken),
+            libraryTracks = await db.LibraryTracks.CountAsync(cancellationToken),
+            localRecommendations = await db.Recommendations.CountAsync(x => x.Source != RecommendationSources.Ai, cancellationToken),
+            ignoredArtists = await db.Recommendations.CountAsync(x => x.Status == RecommendationStatuses.Ignored, cancellationToken)
+        };
+
+        return JsonSerializer.Serialize(summary, JsonOptions);
+    }
 
     private static MutableCandidate Get(Dictionary<string, MutableCandidate> candidates, string name)
     {

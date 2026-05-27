@@ -34,6 +34,12 @@ public sealed record LidarrLookupResult(
     string? Overview,
     string? Disambiguation);
 
+public sealed record LidarrQualityProfileDto(int Id, string Name);
+
+public sealed record LidarrMetadataProfileDto(int Id, string Name);
+
+public sealed record LidarrRootFolderDto(int Id, string Path, long? FreeSpaceBytes);
+
 public sealed record ProfileItem(string Name, int Count, IReadOnlyList<string> Evidence);
 
 public sealed record RecommendationCandidate(

@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Tunarrly.Core/Tunarrly.Core.csproj" />
   <Project Path="Tunarrly.Infrastructure/Tunarrly.Infrastructure.csproj" />
+  <Project Path="Tunarrly.Tests/Tunarrly.Tests.csproj" />
   <Project Path="Tunarrly.Web/Tunarrly.Web.csproj" />
 </Solution>

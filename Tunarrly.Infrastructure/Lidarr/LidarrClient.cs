@@ -35,6 +35,27 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
         return artists.Select(x => new LidarrArtistDto(x.Id, x.ArtistName ?? string.Empty, x.ForeignArtistId, x.MusicBrainzId, x.Monitored, x.Path, x.QualityProfileId, x.MetadataProfileId)).ToArray();
     }
 
+    public async Task<IReadOnlyList<LidarrQualityProfileDto>> GetQualityProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        if (await ConfigureClientAsync(cancellationToken) is null) return [];
+        var profiles = await httpClient.GetFromJsonAsync<List<NamedIdResponse>>("api/v1/qualityprofile", JsonOptions, cancellationToken) ?? [];
+        return profiles.Select(x => new LidarrQualityProfileDto(x.Id, x.Name ?? $"Profile {x.Id}")).ToArray();
+    }
+
+    public async Task<IReadOnlyList<LidarrMetadataProfileDto>> GetMetadataProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        if (await ConfigureClientAsync(cancellationToken) is null) return [];
+        var profiles = await httpClient.GetFromJsonAsync<List<NamedIdResponse>>("api/v1/metadataprofile", JsonOptions, cancellationToken) ?? [];
+        return profiles.Select(x => new LidarrMetadataProfileDto(x.Id, x.Name ?? $"Profile {x.Id}")).ToArray();
+    }
+
+    public async Task<IReadOnlyList<LidarrRootFolderDto>> GetRootFoldersAsync(CancellationToken cancellationToken = default)
+    {
+        if (await ConfigureClientAsync(cancellationToken) is null) return [];
+        var folders = await httpClient.GetFromJsonAsync<List<RootFolderResponse>>("api/v1/rootfolder", JsonOptions, cancellationToken) ?? [];
+        return folders.Select(x => new LidarrRootFolderDto(x.Id, x.Path ?? string.Empty, x.FreeSpace)).Where(x => !string.IsNullOrWhiteSpace(x.Path)).ToArray();
+    }
+
     public async Task<IReadOnlyList<LidarrLookupResult>> SearchArtistAsync(string artistName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(artistName) || await ConfigureClientAsync(cancellationToken) is null) return Array.Empty<LidarrLookupResult>();
@@ -79,4 +100,6 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
 
     private sealed record LidarrArtistResponse(int Id, string? ArtistName, string? ForeignArtistId, string? MusicBrainzId, bool Monitored, string? Path, int? QualityProfileId, int? MetadataProfileId);
     private sealed record LidarrLookupResponse(string? ArtistName, string? ForeignArtistId, string? MusicBrainzId, string? Overview, string? Disambiguation);
+    private sealed record NamedIdResponse(int Id, string? Name);
+    private sealed record RootFolderResponse(int Id, string? Path, long? FreeSpace);
 }

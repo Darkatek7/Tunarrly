@@ -82,19 +82,54 @@ Tunarrly does not send local file paths or secrets to AI providers.
 
 ```bash
 dotnet restore
+dotnet test
 dotnet build
 dotnet run --project Tunarrly.Web
 ```
 
 The default database path is `data/tunarrly.db` locally and `/app/data/tunarrly.db` in Docker.
 
+## Health Checks
+
+Tunarrly exposes non-sensitive health endpoints:
+
+- `/health` returns app liveness.
+- `/ready` checks SQLite connectivity.
+
+The Docker image includes a minimal runtime healthcheck. Use `/ready` from your reverse proxy or external monitoring when HTTP-level readiness is needed.
+
+## Privacy and Security
+
+- Do not expose Tunarrly publicly without authentication in front of it.
+- Lidarr API keys and AI provider tokens are stored in SQLite when saved through the UI.
+- Saved secrets are masked in the UI and are not intentionally logged.
+- AI is optional and disabled by default.
+- Tunarrly does not send local file paths, API keys, tokens, or raw filesystem structure to AI providers.
+- The music library should be mounted read-only with `:ro`.
+
+## Recommendation Sources
+
+- Local recommendations are generated first and work without AI.
+- AI recommendations are optional second-stage recommendations.
+- Overlapping local and AI recommendations are merged and marked as Hybrid.
+- Reasons and evidence are preserved so users can understand why an artist was recommended.
+
+## Troubleshooting
+
+- If Docker Compose fails because `.env` is missing, copy `.env.example` to `.env` and edit it.
+- If the app cannot write SQLite data, check permissions on `./data`.
+- If Lidarr testing fails, verify `LIDARR__BASEURL` is reachable from the Tunarrly container and the API key is correct.
+- If AI testing fails with a local provider, verify the provider exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
+- If scans find no tracks, verify the music volume is mounted to the same path configured in `LIBRARY__PATH`.
+
 ## Roadmap
 
 - Stronger recommendation scoring and evidence drill-downs.
-- Better scan progress updates.
+- Background queue and cancellation for long-running scans.
 - More robust MusicBrainz/Lidarr matching.
 - Authentication option for exposed deployments.
 - More tests and sample datasets.
+- Screenshots and release packaging after real-world testing.
 
 ## License
 

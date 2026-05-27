@@ -17,6 +17,9 @@ public interface ILidarrClient
 {
     Task<OperationResult> TestConnectionAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LidarrArtistDto>> GetArtistsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LidarrQualityProfileDto>> GetQualityProfilesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LidarrMetadataProfileDto>> GetMetadataProfilesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LidarrRootFolderDto>> GetRootFoldersAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LidarrLookupResult>> SearchArtistAsync(string artistName, CancellationToken cancellationToken = default);
     Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, CancellationToken cancellationToken = default);
 }

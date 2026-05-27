@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Tunarrly.Core.Models;
 using Tunarrly.Core.Normalization;
 using Tunarrly.Core.Services;
@@ -6,7 +7,7 @@ using Tunarrly.Infrastructure.Data;
 
 namespace Tunarrly.Infrastructure.Scanning;
 
-public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFactory<TunarrlyDbContext> dbFactory) : ILibraryScanner
+public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFactory<TunarrlyDbContext> dbFactory, ILogger<LibraryScanner> logger) : ILibraryScanner
 {
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase) { ".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wav", ".aac" };
 
@@ -17,6 +18,11 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
         if (!Directory.Exists(path)) return OperationResult.Fail($"Library path does not exist: {path}");
 
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        if (await db.ScanJobs.AnyAsync(x => x.Status == JobStatuses.Running, cancellationToken))
+        {
+            return OperationResult.Fail("A library scan is already running.");
+        }
+
         var files = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(x => Extensions.Contains(Path.GetExtension(x))).ToArray();
         var job = new ScanJob { Status = JobStatuses.Running, LibraryPath = path, FilesDiscovered = files.Length, StartedAt = DateTimeOffset.UtcNow };
         db.ScanJobs.Add(job);
@@ -30,9 +36,10 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
                 await IndexFileAsync(db, file, cancellationToken);
                 job.FilesScanned++;
             }
-            catch
+            catch (Exception ex)
             {
                 job.FilesFailed++;
+                logger.LogWarning(ex, "Failed to index audio file {FileName}", Path.GetFileName(file));
             }
 
             if ((job.FilesScanned + job.FilesFailed) % 25 == 0)

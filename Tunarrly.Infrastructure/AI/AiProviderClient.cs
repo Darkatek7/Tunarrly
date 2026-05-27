@@ -1,10 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Tunarrly.Core.Models;
-using Tunarrly.Core.Normalization;
+using Tunarrly.Core.Recommendations;
 using Tunarrly.Core.Services;
 using Tunarrly.Infrastructure.Data;
 
@@ -53,20 +52,10 @@ public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService 
         var content = completion?.Choices.FirstOrDefault()?.Message.Content;
         if (string.IsNullOrWhiteSpace(content)) return Array.Empty<RecommendationCandidate>();
 
-        var parsed = JsonSerializer.Deserialize<AiRecommendationResponse>(content, JsonOptions);
-        if (parsed?.Recommendations is null) return Array.Empty<RecommendationCandidate>();
-
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var existing = await db.LidarrArtists.Select(x => x.NormalizedName).ToListAsync(cancellationToken);
         var ignored = await db.Recommendations.Where(x => x.Status == RecommendationStatuses.Ignored).Select(x => x.NormalizedArtistName).ToListAsync(cancellationToken);
-        return parsed.Recommendations
-            .Where(x => !string.IsNullOrWhiteSpace(x.ArtistName))
-            .Select(x => x with { Score = Math.Clamp(x.Score, 0, 100), Confidence = Math.Clamp(x.Confidence, 0, 100) })
-            .Where(x => !existing.Contains(MusicTextNormalizer.NormalizeName(x.ArtistName)) && !ignored.Contains(MusicTextNormalizer.NormalizeName(x.ArtistName)))
-            .DistinctBy(x => MusicTextNormalizer.NormalizeName(x.ArtistName))
-            .Take(options.MaxRecommendations)
-            .Select(x => new RecommendationCandidate(x.ArtistName, x.Score, x.Confidence, RecommendationSources.Ai, x.Reasons, x.RelatedArtists, x.Genres))
-            .ToArray();
+        return AiRecommendationValidator.ParseAndValidate(content, existing, ignored, options.MaxRecommendations);
     }
 
     private bool ConfigureClient(Core.Options.AiOptions options, out string error)
@@ -100,6 +89,4 @@ public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService 
     private sealed record ChatMessage(string Role, string Content);
     private sealed record ChatCompletionResponse(IReadOnlyList<Choice> Choices);
     private sealed record Choice(ChatMessage Message);
-    private sealed record AiRecommendationResponse(IReadOnlyList<AiRecommendation> Recommendations);
-    private sealed record AiRecommendation(string ArtistName, int Score, int Confidence, IReadOnlyList<string> Reasons, IReadOnlyList<string> RelatedArtists, IReadOnlyList<string> Genres, string Source);
 }

@@ -1,5 +1,6 @@
 @page "/settings"
 @inject IAppSettingsService AppSettings
+@inject ILidarrClient Lidarr
 @inject ISnackbar Snackbar
 
 <PageTitle>Settings</PageTitle>
@@ -15,20 +16,42 @@ else
         <MudTabPanel Text="Lidarr">
             <MudGrid Class="mt-2">
                 <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_lidarr.BaseUrl" /></MudItem>
-                <MudItem xs="12" md="6"><MudTextField Label="API key" @bind-Value="_lidarr.ApiKey" InputType="InputType.Password" HelperText="Leave blank to keep the saved key." /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="API key" @bind-Value="_lidarr.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_lidarrSecretConfigured, "key")" /></MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Music library path" @bind-Value="_library.Path" /></MudItem>
-                <MudItem xs="12" md="6"><MudTextField Label="Default root folder" @bind-Value="_lidarr.DefaultRootFolder" /></MudItem>
-                <MudItem xs="12" md="4"><MudNumericField Label="Quality profile ID" @bind-Value="_lidarr.DefaultQualityProfileId" /></MudItem>
-                <MudItem xs="12" md="4"><MudNumericField Label="Metadata profile ID" @bind-Value="_lidarr.DefaultMetadataProfileId" /></MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" Label="Default root folder" @bind-Value="_lidarr.DefaultRootFolder" HelperText="Load from Lidarr or type a path manually.">
+                        @foreach (var folder in _rootFolders)
+                        {
+                            <MudSelectItem T="string" Value="@folder.Path">@folder.Path</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="int" Label="Quality profile" @bind-Value="_lidarr.DefaultQualityProfileId">
+                        @foreach (var profile in _qualityProfiles)
+                        {
+                            <MudSelectItem T="int" Value="@profile.Id">@profile.Name (@profile.Id)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="int" Label="Metadata profile" @bind-Value="_lidarr.DefaultMetadataProfileId">
+                        @foreach (var profile in _metadataProfiles)
+                        {
+                            <MudSelectItem T="int" Value="@profile.Id">@profile.Name (@profile.Id)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
                 <MudItem xs="12" md="4"><MudTextField Label="Monitor behavior" @bind-Value="_lidarr.DefaultMonitor" /></MudItem>
                 <MudItem xs="12"><MudSwitch T="bool" Label="Trigger Lidarr search after add" @bind-Value="_lidarr.SearchOnAdd" Color="Color.Primary" /></MudItem>
             </MudGrid>
+            <MudButton Class="mt-4" Variant="Variant.Outlined" Color="Color.Secondary" OnClick="LoadLidarrChoices">Load root folders and profiles from Lidarr</MudButton>
         </MudTabPanel>
         <MudTabPanel Text="AI Provider">
             <MudGrid Class="mt-2">
                 <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_ai.Enabled" Color="Color.Primary" /></MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_ai.BaseUrl" /></MudItem>
-                <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_ai.ApiKey" InputType="InputType.Password" HelperText="Leave blank to keep the saved token; local providers may not need one." /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_ai.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_aiSecretConfigured, "token")" /></MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Model" @bind-Value="_ai.Model" /></MudItem>
                 <MudItem xs="12" md="6"><MudNumericField Label="Temperature" @bind-Value="_ai.Temperature" Min="0" Max="2" Step="0.1" /></MudItem>
                 <MudItem xs="12" md="4"><MudNumericField Label="Timeout seconds" @bind-Value="_ai.TimeoutSeconds" /></MudItem>
@@ -44,21 +67,60 @@ else
     private LidarrOptions? _lidarr;
     private AiOptions? _ai;
     private LibraryOptions? _library;
+    private bool _lidarrSecretConfigured;
+    private bool _aiSecretConfigured;
+    private List<LidarrQualityProfileDto> _qualityProfiles = [];
+    private List<LidarrMetadataProfileDto> _metadataProfiles = [];
+    private List<LidarrRootFolderDto> _rootFolders = [];
 
     protected override async Task OnInitializedAsync()
     {
         _lidarr = await AppSettings.GetLidarrOptionsAsync();
         _ai = await AppSettings.GetAiOptionsAsync();
         _library = await AppSettings.GetLibraryOptionsAsync();
+        _lidarrSecretConfigured = !string.IsNullOrWhiteSpace(_lidarr.ApiKey);
+        _aiSecretConfigured = !string.IsNullOrWhiteSpace(_ai.ApiKey);
         _lidarr.ApiKey = string.Empty;
         _ai.ApiKey = string.Empty;
     }
 
     private async Task Save()
     {
-        await AppSettings.SaveLidarrOptionsAsync(_lidarr!);
-        await AppSettings.SaveLibraryOptionsAsync(_library!);
-        await AppSettings.SaveAiOptionsAsync(_ai!);
+        var lidarr = _lidarr!;
+        var library = _library!;
+        var ai = _ai!;
+        var errors = SettingsValidator.ValidateLidarr(lidarr, library).Concat(SettingsValidator.ValidateAi(ai)).ToArray();
+        if (errors.Length > 0)
+        {
+            foreach (var error in errors) Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        await AppSettings.SaveLidarrOptionsAsync(lidarr);
+        await AppSettings.SaveLibraryOptionsAsync(library);
+        await AppSettings.SaveAiOptionsAsync(ai);
+        _lidarrSecretConfigured = _lidarrSecretConfigured || !string.IsNullOrWhiteSpace(lidarr.ApiKey);
+        _aiSecretConfigured = _aiSecretConfigured || !string.IsNullOrWhiteSpace(ai.ApiKey);
+        lidarr.ApiKey = string.Empty;
+        ai.ApiKey = string.Empty;
         Snackbar.Add("Settings saved.", Severity.Success);
     }
+
+    private async Task LoadLidarrChoices()
+    {
+        try
+        {
+            _qualityProfiles = (await Lidarr.GetQualityProfilesAsync()).ToList();
+            _metadataProfiles = (await Lidarr.GetMetadataProfilesAsync()).ToList();
+            _rootFolders = (await Lidarr.GetRootFoldersAsync()).ToList();
+            Snackbar.Add($"Loaded {_rootFolders.Count} root folders and {_qualityProfiles.Count} quality profiles.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not load Lidarr choices: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static string SecretHelper(bool configured, string name)
+        => configured ? $"A {name} is saved. Leave blank to keep it." : $"Enter a {name}. It will be masked after saving.";
 }

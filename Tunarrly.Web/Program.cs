@@ -29,6 +29,15 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 
 app.UseAntiforgery();
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/ready", async (IDbContextFactory<TunarrlyDbContext> dbFactory, CancellationToken cancellationToken) =>
+{
+    await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+    return await db.Database.CanConnectAsync(cancellationToken)
+        ? Results.Ok(new { status = "ok", checks = new { database = "ok" } })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

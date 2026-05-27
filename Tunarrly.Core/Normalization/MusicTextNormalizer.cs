@@ -99,6 +99,6 @@ public static partial class MusicTextNormalizer
     [GeneratedRegex(@"\s*(?:,|;|\s+and\s+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex ConservativeArtistSeparatorRegex();
 
-    [GeneratedRegex(@"(?:feat\.?|ft\.?|featuring|with| vs\.? | x | & )\s+(?<artists>[^\)\]\[\(]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?:\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b|\bvs\.?|\bx\b|&)\s+(?<artists>[^\)\]\[\(]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex CollaborationRegex();
 }

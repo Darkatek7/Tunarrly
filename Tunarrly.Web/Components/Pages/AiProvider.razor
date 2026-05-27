@@ -15,7 +15,7 @@ else
         <MudGrid>
             <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_options.Enabled" Color="Color.Primary" /></MudItem>
             <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_options.BaseUrl" /></MudItem>
-            <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_options.ApiKey" InputType="InputType.Password" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_options.ApiKey" InputType="InputType.Password" HelperText="@(_secretConfigured ? "A token is saved. Leave blank to keep it." : "Optional for local providers that do not require auth.")" /></MudItem>
             <MudItem xs="12" md="6"><MudTextField Label="Model" @bind-Value="_options.Model" /></MudItem>
             <MudItem xs="12" md="6"><MudNumericField Label="Temperature" @bind-Value="_options.Temperature" Min="0" Max="2" Step="0.1" /></MudItem>
             <MudItem xs="12" md="4"><MudNumericField Label="Timeout seconds" @bind-Value="_options.TimeoutSeconds" /></MudItem>
@@ -23,7 +23,7 @@ else
             <MudItem xs="12" md="4"><MudNumericField Label="Max recommendations" @bind-Value="_options.MaxRecommendations" /></MudItem>
         </MudGrid>
         <MudStack Row="true" Class="mt-4">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClicked">Save</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Test">Test AI provider</MudButton>
         </MudStack>
     </MudCard>
@@ -31,22 +31,37 @@ else
 
 @code {
     private AiOptions? _options;
+    private bool _secretConfigured;
 
     protected override async Task OnInitializedAsync()
     {
         _options = await Settings.GetAiOptionsAsync();
+        _secretConfigured = !string.IsNullOrWhiteSpace(_options.ApiKey);
         _options.ApiKey = string.Empty;
     }
 
-    private async Task Save()
+    private async Task SaveClicked() => await Save();
+
+    private async Task<bool> Save()
     {
-        await Settings.SaveAiOptionsAsync(_options!);
+        var options = _options!;
+        var errors = SettingsValidator.ValidateAi(options);
+        if (errors.Count > 0)
+        {
+            foreach (var error in errors) Snackbar.Add(error, Severity.Error);
+            return false;
+        }
+
+        await Settings.SaveAiOptionsAsync(options);
+        _secretConfigured = _secretConfigured || !string.IsNullOrWhiteSpace(options.ApiKey);
+        options.ApiKey = string.Empty;
         Snackbar.Add("AI provider settings saved.", Severity.Success);
+        return true;
     }
 
     private async Task Test()
     {
-        await Save();
+        if (!await Save()) return;
         var result = await Ai.TestConnectionAsync();
         Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
     }
