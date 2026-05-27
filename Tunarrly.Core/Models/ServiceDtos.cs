@@ -51,4 +51,10 @@ public sealed record RecommendationCandidate(
     IReadOnlyList<string> RelatedArtists,
     IReadOnlyList<string> Genres);
 
+public sealed record RecommendationEvidence(
+    string Type,
+    string Summary,
+    int Weight,
+    IReadOnlyDictionary<string, string> Data);
+
 public sealed record ScanRequest(string LibraryPath);

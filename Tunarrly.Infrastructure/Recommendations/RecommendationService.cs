@@ -37,11 +37,13 @@ public sealed class RecommendationService(
             var count = group.Count();
             candidate.Score += Math.Min(35, count * 4);
             candidate.Reasons.Add($"Appears in your downloaded library on {count} track credit{(count == 1 ? string.Empty : "s")}");
+            candidate.Evidence.Add(new RecommendationEvidence("AlreadyInLibrary", $"Appears in your downloaded library on {count} track credit{(count == 1 ? string.Empty : "s")}", Math.Min(35, count * 4), new Dictionary<string, string> { ["trackCredits"] = count.ToString() }));
             if (group.Any(x => x.CreditType == CreditTypes.Featured))
             {
                 var featuredCount = group.Count(x => x.CreditType == CreditTypes.Featured);
                 candidate.Score += Math.Min(30, featuredCount * 8);
                 candidate.Reasons.Add($"Appears as featured artist on {featuredCount} downloaded track{(featuredCount == 1 ? string.Empty : "s")}");
+                candidate.Evidence.Add(new RecommendationEvidence("FeaturedCredit", $"Appears as featured artist on {featuredCount} downloaded track{(featuredCount == 1 ? string.Empty : "s")}", Math.Min(30, featuredCount * 8), new Dictionary<string, string> { ["featuredTrackCredits"] = featuredCount.ToString() }));
             }
         }
 
@@ -54,12 +56,14 @@ public sealed class RecommendationService(
             candidate.Score += Math.Min(20, topGenre.Count() * 2);
             candidate.Genres.Add(topGenre.Key);
             candidate.Reasons.Add($"Shares genre {topGenre.Key} with {topGenre.Count()} track{(topGenre.Count() == 1 ? string.Empty : "s")} in your library");
+            candidate.Evidence.Add(new RecommendationEvidence("SharedGenre", $"Shares genre {topGenre.Key} with {topGenre.Count()} track{(topGenre.Count() == 1 ? string.Empty : "s")} in your library", Math.Min(20, topGenre.Count() * 2), new Dictionary<string, string> { ["genre"] = topGenre.Key, ["tracks"] = topGenre.Count().ToString() }));
         }
 
         foreach (var candidate in candidates.Values)
         {
             candidate.Score = Math.Clamp(candidate.Score + 25, 1, 100);
             await UpsertRecommendationAsync(db, candidate.ToCandidate(RecommendationSources.Local), cancellationToken);
+            await UpsertEvidenceRelationAsync(db, candidate, cancellationToken);
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -186,6 +190,30 @@ public sealed class RecommendationService(
         return JsonSerializer.Serialize(summary, JsonOptions);
     }
 
+    private static async Task UpsertEvidenceRelationAsync(TunarrlyDbContext db, MutableCandidate candidate, CancellationToken cancellationToken)
+    {
+        var normalized = MusicTextNormalizer.NormalizeName(candidate.ArtistName);
+        var existing = await db.ArtistRelations.FirstOrDefaultAsync(x => x.SourceNormalizedName == "library" && x.TargetNormalizedName == normalized && x.RelationType == RelationTypes.Manual, cancellationToken);
+        if (existing is null)
+        {
+            db.ArtistRelations.Add(new ArtistRelation
+            {
+                SourceArtistName = "Library",
+                SourceNormalizedName = "library",
+                TargetArtistName = candidate.ArtistName,
+                TargetNormalizedName = normalized,
+                RelationType = RelationTypes.Manual,
+                Weight = candidate.Evidence.Sum(x => x.Weight),
+                EvidenceJson = JsonSerializer.Serialize(candidate.Evidence, JsonOptions)
+            });
+            return;
+        }
+
+        existing.TargetArtistName = candidate.ArtistName;
+        existing.Weight = candidate.Evidence.Sum(x => x.Weight);
+        existing.EvidenceJson = JsonSerializer.Serialize(candidate.Evidence, JsonOptions);
+    }
+
     private static MutableCandidate Get(Dictionary<string, MutableCandidate> candidates, string name)
     {
         var normalized = MusicTextNormalizer.NormalizeName(name);
@@ -202,6 +230,7 @@ public sealed class RecommendationService(
         public List<string> Reasons { get; } = [];
         public List<string> RelatedArtists { get; } = [];
         public List<string> Genres { get; } = [];
+        public List<RecommendationEvidence> Evidence { get; } = [];
         public RecommendationCandidate ToCandidate(string source) => new(ArtistName, Score, null, source, Reasons.Distinct().ToArray(), RelatedArtists.Distinct().ToArray(), Genres.Distinct().ToArray());
     }
 }

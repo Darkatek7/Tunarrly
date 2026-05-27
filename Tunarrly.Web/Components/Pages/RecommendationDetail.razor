@@ -30,6 +30,17 @@ else
                             <MudListItem>@reason</MudListItem>
                         }
                     </MudList>
+                    <MudText Typo="Typo.h6" Class="mt-4">Structured Evidence</MudText>
+                    @if (_evidence.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary">No structured evidence has been stored for this recommendation yet.</MudText>
+                    }
+                    @foreach (var item in _evidence)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="my-2">
+                            <strong>@item.Type</strong>: @item.Summary (weight @item.Weight)
+                        </MudAlert>
+                    }
                     <MudText Typo="Typo.h6" Class="mt-4">Genres</MudText>
                     @foreach (var genre in Genres)
                     {
@@ -66,6 +77,7 @@ else
 @code {
     [Parameter] public int Id { get; set; }
     private Recommendation? _recommendation;
+    private List<RecommendationEvidence> _evidence = [];
     private List<LidarrLookupResult> _matches = [];
     private LidarrLookupResult? _selected;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -77,6 +89,13 @@ else
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         _recommendation = await db.Recommendations.FindAsync(Id);
+        if (_recommendation is not null)
+        {
+            var relations = await db.ArtistRelations.Where(x => x.TargetNormalizedName == _recommendation.NormalizedArtistName).ToListAsync();
+            _evidence = relations
+                .SelectMany(x => JsonSerializer.Deserialize<IReadOnlyList<RecommendationEvidence>>(x.EvidenceJson, JsonOptions) ?? [])
+                .ToList();
+        }
     }
 
     private async Task Search()
