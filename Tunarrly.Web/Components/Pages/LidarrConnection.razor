@@ -1,0 +1,31 @@
+@page "/lidarr"
+@inject ILidarrClient Lidarr
+@inject ILidarrSyncService Sync
+@inject ISnackbar Snackbar
+
+<PageTitle>Lidarr Connection</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Lidarr Connection</MudText>
+<MudStack Row="true" Spacing="2" Class="mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Test">Test Lidarr connection</MudButton>
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SyncArtists">Sync Lidarr artists</MudButton>
+</MudStack>
+@if (_message is not null)
+{
+    <MudAlert Severity="@(_success ? Severity.Success : Severity.Error)">@_message</MudAlert>
+}
+
+@code {
+    private string? _message;
+    private bool _success;
+
+    private async Task Test() => await Run(() => Lidarr.TestConnectionAsync());
+    private async Task SyncArtists() => await Run(() => Sync.SyncArtistsAsync());
+
+    private async Task Run(Func<Task<OperationResult>> action)
+    {
+        var result = await action();
+        _message = result.Message;
+        _success = result.Success;
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+    }
+}

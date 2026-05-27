@@ -1,0 +1,98 @@
+@page "/recommendations/{Id:int}"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject ILidarrClient Lidarr
+@inject IRecommendationService RecommendationService
+@inject ISnackbar Snackbar
+
+<PageTitle>Recommendation Detail</PageTitle>
+@if (_recommendation is null)
+{
+    <MudAlert Severity="Severity.Warning">Recommendation not found.</MudAlert>
+}
+else
+{
+    <MudStack Spacing="4">
+        <MudCard Class="pa-5" Elevation="0">
+            <MudText Typo="Typo.h3" Class="fw-800">@_recommendation.ArtistName</MudText>
+            <MudStack Row="true" Spacing="1" Class="mt-2">
+                <MudChip T="string" Color="Color.Primary">Score @_recommendation.Score</MudChip>
+                <MudChip T="string" Color="Color.Secondary">@_recommendation.Source</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined">@_recommendation.Status</MudChip>
+            </MudStack>
+        </MudCard>
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudCard Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5">Explanation</MudText>
+                    <MudList T="string">
+                        @foreach (var reason in Reasons)
+                        {
+                            <MudListItem>@reason</MudListItem>
+                        }
+                    </MudList>
+                    <MudText Typo="Typo.h6" Class="mt-4">Genres</MudText>
+                    @foreach (var genre in Genres)
+                    {
+                        <MudChip T="string" Class="ma-1" Color="Color.Secondary" Variant="Variant.Outlined">@genre</MudChip>
+                    }
+                    <MudText Typo="Typo.h6" Class="mt-4">Related Artists</MudText>
+                    @foreach (var artist in Related)
+                    {
+                        <MudChip T="string" Class="ma-1" Variant="Variant.Outlined">@artist</MudChip>
+                    }
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5">Add to Lidarr</MudText>
+                    <MudAlert Severity="Severity.Info" Class="my-3">Search Lidarr, select the correct match, then confirm. Tunarrly never auto-adds artists.</MudAlert>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Search">Search Lidarr</MudButton>
+                    @if (_matches.Count > 0)
+                    {
+                        <MudRadioGroup T="LidarrLookupResult" @bind-Value="_selected">
+                            @foreach (var match in _matches)
+                            {
+                                <MudRadio T="LidarrLookupResult" Value="match">@match.ArtistName @match.Disambiguation</MudRadio>
+                            }
+                        </MudRadioGroup>
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="_selected is null" OnClick="ConfirmAdd">Confirm add</MudButton>
+                    }
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Recommendation? _recommendation;
+    private List<LidarrLookupResult> _matches = [];
+    private LidarrLookupResult? _selected;
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private IReadOnlyList<string> Reasons => Read(_recommendation?.ReasonJson);
+    private IReadOnlyList<string> Genres => Read(_recommendation?.GenresJson);
+    private IReadOnlyList<string> Related => Read(_recommendation?.RelatedArtistsJson);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _recommendation = await db.Recommendations.FindAsync(Id);
+    }
+
+    private async Task Search()
+    {
+        if (_recommendation is null) return;
+        _matches = (await Lidarr.SearchArtistAsync(_recommendation.ArtistName)).ToList();
+        Snackbar.Add(_matches.Count == 0 ? "No Lidarr matches found." : $"Found {_matches.Count} Lidarr matches.", Severity.Info);
+    }
+
+    private async Task ConfirmAdd()
+    {
+        if (_recommendation is null || _selected is null) return;
+        var result = await RecommendationService.AddToLidarrAsync(_recommendation.Id, _selected);
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+    }
+
+    private static IReadOnlyList<string> Read(string? json)
+        => string.IsNullOrWhiteSpace(json) ? [] : JsonSerializer.Deserialize<IReadOnlyList<string>>(json, JsonOptions) ?? [];
+}

@@ -1,0 +1,36 @@
+@page "/library"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject ILibraryScanner Scanner
+@inject ISnackbar Snackbar
+
+<PageTitle>Library</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Library</MudText>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Scan">Scan Library</MudButton>
+<MudGrid Class="mt-4">
+    <MudItem xs="12" md="4"><StatCard Title="Artists" Value="@_artistCount.ToString()" /></MudItem>
+    <MudItem xs="12" md="4"><StatCard Title="Albums" Value="@_albumCount.ToString()" /></MudItem>
+    <MudItem xs="12" md="4"><StatCard Title="Tracks" Value="@_trackCount.ToString()" /></MudItem>
+</MudGrid>
+
+@code {
+    private int _artistCount;
+    private int _albumCount;
+    private int _trackCount;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _artistCount = await db.LibraryArtists.CountAsync();
+        _albumCount = await db.LibraryAlbums.CountAsync();
+        _trackCount = await db.LibraryTracks.CountAsync();
+    }
+
+    private async Task Scan()
+    {
+        var result = await Scanner.ScanAsync();
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+        await Load();
+    }
+}

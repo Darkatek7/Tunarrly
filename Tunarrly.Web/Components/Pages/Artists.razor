@@ -1,0 +1,30 @@
+@page "/artists"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+
+<PageTitle>Artists</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Artists</MudText>
+<MudTabs Rounded="true">
+    <MudTabPanel Text="Lidarr">
+        <MudTable Items="_lidarr" Hover="true" Elevation="0">
+            <HeaderContent><MudTh>Name</MudTh><MudTh>Monitored</MudTh><MudTh>Path</MudTh></HeaderContent>
+            <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Monitored</MudTd><MudTd>@context.Path</MudTd></RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Library">
+        <MudTable Items="_library" Hover="true" Elevation="0">
+            <HeaderContent><MudTh>Name</MudTh><MudTh>Source</MudTh></HeaderContent>
+            <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Source</MudTd></RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private List<LidarrArtist> _lidarr = [];
+    private List<LibraryArtist> _library = [];
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _lidarr = await db.LidarrArtists.OrderBy(x => x.Name).Take(500).ToListAsync();
+        _library = await db.LibraryArtists.OrderBy(x => x.Name).Take(500).ToListAsync();
+    }
+}

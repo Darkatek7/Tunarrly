@@ -1,0 +1,72 @@
+@page "/recommendations"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject IRecommendationService RecommendationService
+@inject ISnackbar Snackbar
+
+<PageTitle>Recommendations</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Recommendations</MudText>
+<MudStack Row="true" Class="mb-4" Spacing="2">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateLocal">Generate Local</MudButton>
+    <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi">Generate AI</MudButton>
+</MudStack>
+
+<MudTable Items="_recommendations" Hover="true" Elevation="0">
+    <HeaderContent>
+        <MudTh>Artist</MudTh><MudTh>Score</MudTh><MudTh>Confidence</MudTh><MudTh>Source</MudTh><MudTh>Reasons</MudTh><MudTh>Status</MudTh><MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudLink Href="@($"recommendations/{context.Id}")">@context.ArtistName</MudLink></MudTd>
+        <MudTd><MudChip T="string" Color="Color.Primary">@context.Score</MudChip></MudTd>
+        <MudTd>@context.Confidence</MudTd>
+        <MudTd><MudChip T="string" Color="@SourceColor(context.Source)">@context.Source</MudChip></MudTd>
+        <MudTd>
+            @foreach (var reason in Reasons(context).Take(2))
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ma-1">@reason</MudChip>
+            }
+        </MudTd>
+        <MudTd>@context.Status</MudTd>
+        <MudTd>
+            <MudButton Size="Size.Small" Href="@($"recommendations/{context.Id}")">View</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Warning" OnClick="() => SetStatus(context.Id, RecommendationStatuses.MaybeLater)">Maybe later</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Error" OnClick="() => SetStatus(context.Id, RecommendationStatuses.Ignored)">Ignore</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudAlert Severity="Severity.Info">No recommendations yet. Scan your library and generate local recommendations.</MudAlert>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<Recommendation> _recommendations = [];
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _recommendations = await db.Recommendations.OrderByDescending(x => x.Score).ThenBy(x => x.ArtistName).ToListAsync();
+    }
+
+    private async Task GenerateLocal() => await Run(() => RecommendationService.GenerateLocalAsync());
+    private async Task GenerateAi() => await Run(() => RecommendationService.GenerateAiAsync());
+    private async Task SetStatus(int id, string status) => await Run(() => RecommendationService.SetStatusAsync(id, status));
+
+    private async Task Run(Func<Task<OperationResult>> action)
+    {
+        var result = await action();
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+        await Load();
+    }
+
+    private static IReadOnlyList<string> Reasons(Recommendation recommendation)
+        => JsonSerializer.Deserialize<IReadOnlyList<string>>(recommendation.ReasonJson, JsonOptions) ?? [];
+
+    private static Color SourceColor(string source) => source switch
+    {
+        RecommendationSources.Ai => Color.Tertiary,
+        RecommendationSources.Hybrid => Color.Secondary,
+        _ => Color.Primary
+    };
+}

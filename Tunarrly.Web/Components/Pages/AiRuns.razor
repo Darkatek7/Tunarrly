@@ -1,0 +1,26 @@
+@page "/ai-runs"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+
+<PageTitle>AI Runs</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Runs</MudText>
+<MudTable Items="_runs" Hover="true" Elevation="0">
+    <HeaderContent><MudTh>Status</MudTh><MudTh>Provider</MudTh><MudTh>Model</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Error</MudTh></HeaderContent>
+    <RowTemplate>
+        <MudTd><MudChip T="string" Color="@StatusColor(context.Status)">@context.Status</MudChip></MudTd>
+        <MudTd>@context.ProviderBaseUrl</MudTd>
+        <MudTd>@context.Model</MudTd>
+        <MudTd>@context.StartedAt.LocalDateTime</MudTd>
+        <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
+        <MudTd>@context.ErrorMessage</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<AiRecommendationRun> _runs = [];
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _runs = (await db.AiRecommendationRuns.ToListAsync()).OrderByDescending(x => x.StartedAt).Take(50).ToList();
+    }
+    private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;
+}

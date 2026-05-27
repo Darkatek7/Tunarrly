@@ -1,0 +1,59 @@
+html, body {
+    background: #080b13;
+    color: #eef2ff;
+    font-family: Inter, sans-serif;
+}
+
+a {
+    color: inherit;
+}
+
+.tunarrly-appbar {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    backdrop-filter: blur(16px);
+}
+
+.tunarrly-drawer {
+    border-right: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.main-content {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(139, 92, 246, 0.18), transparent 32rem),
+        radial-gradient(circle at 100% 10%, rgba(34, 211, 238, 0.14), transparent 28rem),
+        #080b13;
+}
+
+.brand-title, .fw-800 {
+    font-weight: 800;
+    letter-spacing: -0.04em;
+}
+
+.hero-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(34, 211, 238, 0.12));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-card {
+    height: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+#blazor-error-ui {
+    background: #7f1d1d;
+    bottom: 0;
+    color: white;
+    display: none;
+    left: 0;
+    padding: 0.75rem 1rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+}

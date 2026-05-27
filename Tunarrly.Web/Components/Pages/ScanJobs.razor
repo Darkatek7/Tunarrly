@@ -1,0 +1,28 @@
+@page "/scan-jobs"
+@inject IDbContextFactory<TunarrlyDbContext> DbFactory
+
+<PageTitle>Scan Jobs</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Scan Jobs</MudText>
+<MudTable Items="_jobs" Hover="true" Elevation="0">
+    <HeaderContent>
+        <MudTh>Status</MudTh><MudTh>Path</MudTh><MudTh>Scanned</MudTh><MudTh>Failed</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudChip T="string" Color="@StatusColor(context.Status)">@context.Status</MudChip></MudTd>
+        <MudTd>@context.LibraryPath</MudTd>
+        <MudTd>@context.FilesScanned / @context.FilesDiscovered</MudTd>
+        <MudTd>@context.FilesFailed</MudTd>
+        <MudTd>@context.StartedAt.LocalDateTime</MudTd>
+        <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<ScanJob> _jobs = [];
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _jobs = (await db.ScanJobs.ToListAsync()).OrderByDescending(x => x.StartedAt).Take(50).ToList();
+    }
+    private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;
+}

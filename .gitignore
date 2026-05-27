@@ -1,0 +1,31 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# App data
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Docker/local artifacts
+.docker/
+docker-compose.override.yml
+
+# OS files
+.DS_Store
+Thumbs.db

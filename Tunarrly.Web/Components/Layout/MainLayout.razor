@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="tunarrly-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="fw-800">Tunarrly</MudText>
+        <MudSpacer />
+        <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined">AI optional</MudChip>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="tunarrly-drawer">
+        <MudDrawerHeader>
+            <div>
+                <MudText Typo="Typo.h5" Class="brand-title">Tunarrly</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Discovery for Lidarr</MudText>
+            </div>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="main-content">
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">x</span>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Black = "#05070d",
+            Background = "#080b13",
+            Surface = "#121826",
+            DrawerBackground = "#0d1320",
+            AppbarBackground = "#0b1020",
+            Primary = "#8b5cf6",
+            Secondary = "#22d3ee",
+            Tertiary = "#f59e0b"
+        },
+        Typography = new Typography { Default = new DefaultTypography { FontFamily = ["Inter", "sans-serif"] } }
+    };
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}

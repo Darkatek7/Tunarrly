@@ -1,0 +1,70 @@
+﻿@page "/"
+@inject IDashboardService Dashboard
+@inject ILibraryScanner Scanner
+@inject ILidarrSyncService LidarrSync
+@inject IRecommendationService Recommendations
+@inject ISnackbar Snackbar
+
+<PageTitle>Tunarrly Dashboard</PageTitle>
+
+<MudStack Spacing="4">
+    <MudCard Class="hero-card pa-6" Elevation="0">
+        <MudText Typo="Typo.h2" Class="fw-800">AI-assisted music discovery for Lidarr</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Powered by your own library, local evidence, and optional AI.</MudText>
+        <MudStack Row="true" Spacing="2" Class="mt-4" Style="flex-wrap: wrap;">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ScanLibrary" Disabled="_busy">Scan Library</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SyncLidarr" Disabled="_busy">Sync Lidarr</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GenerateLocal" Disabled="_busy">Generate Local Recommendations</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi" Disabled="_busy">Generate AI Recommendations</MudButton>
+        </MudStack>
+    </MudCard>
+
+    @if (_stats is null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Lidarr Artists" Value="@_stats.LidarrArtists.ToString()" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Library Artists" Value="@_stats.LibraryArtists.ToString()" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Tracks Indexed" Value="@_stats.LibraryTracks.ToString()" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="New Recommendations" Value="@_stats.NewRecommendations.ToString()" /></MudItem>
+        </MudGrid>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudAlert Severity="@(_stats.LidarrConfigured ? Severity.Success : Severity.Warning)">
+                    Lidarr configuration: @(_stats.LidarrConfigured ? "configured" : "missing base URL or API key")
+                </MudAlert>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudAlert Severity="@(_stats.AiEnabled ? Severity.Info : Severity.Normal)">
+                    AI provider: @(_stats.AiEnabled ? "enabled" : "disabled by default")
+                </MudAlert>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private DashboardStats? _stats;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync() => await LoadStats();
+
+    private async Task LoadStats() => _stats = await Dashboard.GetStatsAsync();
+
+    private async Task Run(Func<Task<OperationResult>> action)
+    {
+        _busy = true;
+        var result = await action();
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+        await LoadStats();
+        _busy = false;
+    }
+
+    private Task ScanLibrary() => Run(() => Scanner.ScanAsync());
+    private Task SyncLidarr() => Run(() => LidarrSync.SyncArtistsAsync());
+    private Task GenerateLocal() => Run(() => Recommendations.GenerateLocalAsync());
+    private Task GenerateAi() => Run(() => Recommendations.GenerateAiAsync());
+}

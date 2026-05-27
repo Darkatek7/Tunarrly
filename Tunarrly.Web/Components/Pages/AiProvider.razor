@@ -1,0 +1,53 @@
+@page "/ai-provider"
+@inject IAppSettingsService Settings
+@inject IAiProviderClient Ai
+@inject ISnackbar Snackbar
+
+<PageTitle>AI Provider</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Provider</MudText>
+@if (_options is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudCard Class="pa-4" Elevation="0">
+        <MudGrid>
+            <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_options.Enabled" Color="Color.Primary" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_options.BaseUrl" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_options.ApiKey" InputType="InputType.Password" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField Label="Model" @bind-Value="_options.Model" /></MudItem>
+            <MudItem xs="12" md="6"><MudNumericField Label="Temperature" @bind-Value="_options.Temperature" Min="0" Max="2" Step="0.1" /></MudItem>
+            <MudItem xs="12" md="4"><MudNumericField Label="Timeout seconds" @bind-Value="_options.TimeoutSeconds" /></MudItem>
+            <MudItem xs="12" md="4"><MudNumericField Label="Max input artists" @bind-Value="_options.MaxInputArtists" /></MudItem>
+            <MudItem xs="12" md="4"><MudNumericField Label="Max recommendations" @bind-Value="_options.MaxRecommendations" /></MudItem>
+        </MudGrid>
+        <MudStack Row="true" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Test">Test AI provider</MudButton>
+        </MudStack>
+    </MudCard>
+}
+
+@code {
+    private AiOptions? _options;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _options = await Settings.GetAiOptionsAsync();
+        _options.ApiKey = string.Empty;
+    }
+
+    private async Task Save()
+    {
+        await Settings.SaveAiOptionsAsync(_options!);
+        Snackbar.Add("AI provider settings saved.", Severity.Success);
+    }
+
+    private async Task Test()
+    {
+        await Save();
+        var result = await Ai.TestConnectionAsync();
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+    }
+}

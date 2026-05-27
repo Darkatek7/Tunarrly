@@ -1,0 +1,64 @@
+@page "/settings"
+@inject IAppSettingsService AppSettings
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings</PageTitle>
+<MudText Typo="Typo.h3" Class="fw-800 mb-4">Settings</MudText>
+
+@if (_lidarr is null || _ai is null || _library is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudTabs Rounded="true" Elevation="0">
+        <MudTabPanel Text="Lidarr">
+            <MudGrid Class="mt-2">
+                <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_lidarr.BaseUrl" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="API key" @bind-Value="_lidarr.ApiKey" InputType="InputType.Password" HelperText="Leave blank to keep the saved key." /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Music library path" @bind-Value="_library.Path" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Default root folder" @bind-Value="_lidarr.DefaultRootFolder" /></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField Label="Quality profile ID" @bind-Value="_lidarr.DefaultQualityProfileId" /></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField Label="Metadata profile ID" @bind-Value="_lidarr.DefaultMetadataProfileId" /></MudItem>
+                <MudItem xs="12" md="4"><MudTextField Label="Monitor behavior" @bind-Value="_lidarr.DefaultMonitor" /></MudItem>
+                <MudItem xs="12"><MudSwitch T="bool" Label="Trigger Lidarr search after add" @bind-Value="_lidarr.SearchOnAdd" Color="Color.Primary" /></MudItem>
+            </MudGrid>
+        </MudTabPanel>
+        <MudTabPanel Text="AI Provider">
+            <MudGrid Class="mt-2">
+                <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_ai.Enabled" Color="Color.Primary" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_ai.BaseUrl" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_ai.ApiKey" InputType="InputType.Password" HelperText="Leave blank to keep the saved token; local providers may not need one." /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField Label="Model" @bind-Value="_ai.Model" /></MudItem>
+                <MudItem xs="12" md="6"><MudNumericField Label="Temperature" @bind-Value="_ai.Temperature" Min="0" Max="2" Step="0.1" /></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField Label="Timeout seconds" @bind-Value="_ai.TimeoutSeconds" /></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField Label="Max input artists" @bind-Value="_ai.MaxInputArtists" /></MudItem>
+                <MudItem xs="12" md="4"><MudNumericField Label="Max recommendations" @bind-Value="_ai.MaxRecommendations" /></MudItem>
+            </MudGrid>
+        </MudTabPanel>
+    </MudTabs>
+    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save settings</MudButton>
+}
+
+@code {
+    private LidarrOptions? _lidarr;
+    private AiOptions? _ai;
+    private LibraryOptions? _library;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lidarr = await AppSettings.GetLidarrOptionsAsync();
+        _ai = await AppSettings.GetAiOptionsAsync();
+        _library = await AppSettings.GetLibraryOptionsAsync();
+        _lidarr.ApiKey = string.Empty;
+        _ai.ApiKey = string.Empty;
+    }
+
+    private async Task Save()
+    {
+        await AppSettings.SaveLidarrOptionsAsync(_lidarr!);
+        await AppSettings.SaveLibraryOptionsAsync(_library!);
+        await AppSettings.SaveAiOptionsAsync(_ai!);
+        Snackbar.Add("Settings saved.", Severity.Success);
+    }
+}

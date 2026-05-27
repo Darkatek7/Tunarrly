@@ -1,0 +1,15 @@
+bin/
+obj/
+data/
+.git/
+.github/
+.env
+.env.*
+!.env.example
+Dockerfile
+docker-compose.override.yml
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
