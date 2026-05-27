@@ -1,6 +1,6 @@
 ﻿@page "/"
 @inject IDashboardService Dashboard
-@inject ILibraryScanner Scanner
+@inject IScanJobService ScanJobs
 @inject ILidarrSyncService LidarrSync
 @inject IRecommendationService Recommendations
 @inject ISnackbar Snackbar
@@ -63,7 +63,7 @@
         _busy = false;
     }
 
-    private Task ScanLibrary() => Run(() => Scanner.ScanAsync());
+    private Task ScanLibrary() => Run(() => ScanJobs.EnqueueScanAsync());
     private Task SyncLidarr() => Run(() => LidarrSync.SyncArtistsAsync());
     private Task GenerateLocal() => Run(() => Recommendations.GenerateLocalAsync());
     private Task GenerateAi() => Run(() => Recommendations.GenerateAiAsync());

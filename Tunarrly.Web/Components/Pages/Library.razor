@@ -1,6 +1,6 @@
 @page "/library"
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
-@inject ILibraryScanner Scanner
+@inject IScanJobService ScanJobs
 @inject ISnackbar Snackbar
 
 <PageTitle>Library</PageTitle>
@@ -29,7 +29,7 @@
 
     private async Task Scan()
     {
-        var result = await Scanner.ScanAsync();
+        var result = await ScanJobs.EnqueueScanAsync();
         Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
         await Load();
     }
