@@ -31,28 +31,28 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
     public async Task<IReadOnlyList<LidarrArtistDto>> GetArtistsAsync(CancellationToken cancellationToken = default)
     {
         if (await ConfigureClientAsync(cancellationToken) is null) return Array.Empty<LidarrArtistDto>();
-        var artists = await httpClient.GetFromJsonAsync<List<LidarrArtistResponse>>("api/v1/artist", JsonOptions, cancellationToken) ?? [];
+        var artists = await GetJsonOrEmptyAsync<LidarrArtistResponse>("api/v1/artist", cancellationToken);
         return artists.Select(x => new LidarrArtistDto(x.Id, x.ArtistName ?? string.Empty, x.ForeignArtistId, x.MusicBrainzId, x.Monitored, x.Path, x.QualityProfileId, x.MetadataProfileId)).ToArray();
     }
 
     public async Task<IReadOnlyList<LidarrQualityProfileDto>> GetQualityProfilesAsync(CancellationToken cancellationToken = default)
     {
         if (await ConfigureClientAsync(cancellationToken) is null) return [];
-        var profiles = await httpClient.GetFromJsonAsync<List<NamedIdResponse>>("api/v1/qualityprofile", JsonOptions, cancellationToken) ?? [];
+        var profiles = await GetJsonOrEmptyAsync<NamedIdResponse>("api/v1/qualityprofile", cancellationToken);
         return profiles.Select(x => new LidarrQualityProfileDto(x.Id, x.Name ?? $"Profile {x.Id}")).ToArray();
     }
 
     public async Task<IReadOnlyList<LidarrMetadataProfileDto>> GetMetadataProfilesAsync(CancellationToken cancellationToken = default)
     {
         if (await ConfigureClientAsync(cancellationToken) is null) return [];
-        var profiles = await httpClient.GetFromJsonAsync<List<NamedIdResponse>>("api/v1/metadataprofile", JsonOptions, cancellationToken) ?? [];
+        var profiles = await GetJsonOrEmptyAsync<NamedIdResponse>("api/v1/metadataprofile", cancellationToken);
         return profiles.Select(x => new LidarrMetadataProfileDto(x.Id, x.Name ?? $"Profile {x.Id}")).ToArray();
     }
 
     public async Task<IReadOnlyList<LidarrRootFolderDto>> GetRootFoldersAsync(CancellationToken cancellationToken = default)
     {
         if (await ConfigureClientAsync(cancellationToken) is null) return [];
-        var folders = await httpClient.GetFromJsonAsync<List<RootFolderResponse>>("api/v1/rootfolder", JsonOptions, cancellationToken) ?? [];
+        var folders = await GetJsonOrEmptyAsync<RootFolderResponse>("api/v1/rootfolder", cancellationToken);
         return folders.Select(x => new LidarrRootFolderDto(x.Id, x.Path ?? string.Empty, x.FreeSpace)).Where(x => !string.IsNullOrWhiteSpace(x.Path)).ToArray();
     }
 
@@ -60,7 +60,7 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
     {
         if (string.IsNullOrWhiteSpace(artistName) || await ConfigureClientAsync(cancellationToken) is null) return Array.Empty<LidarrLookupResult>();
         var url = $"api/v1/artist/lookup?term={Uri.EscapeDataString(artistName)}";
-        var results = await httpClient.GetFromJsonAsync<List<LidarrLookupResponse>>(url, JsonOptions, cancellationToken) ?? [];
+        var results = await GetJsonOrEmptyAsync<LidarrLookupResponse>(url, cancellationToken);
         return results.Select(x => new LidarrLookupResult(x.ArtistName ?? string.Empty, x.ForeignArtistId, x.MusicBrainzId, x.Overview, x.Disambiguation)).ToArray();
     }
 
@@ -81,10 +81,40 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
             addOptions = new { monitor = options.DefaultMonitor, searchForMissingAlbums = options.SearchOnAdd }
         };
 
-        using var response = await httpClient.PostAsJsonAsync("api/v1/artist", payload, JsonOptions, cancellationToken);
-        return response.IsSuccessStatusCode
-            ? OperationResult.Ok($"Added {artist.ArtistName} to Lidarr.")
-            : OperationResult.Fail($"Lidarr add failed: {(int)response.StatusCode}.");
+        try
+        {
+            using var response = await httpClient.PostAsJsonAsync("api/v1/artist", payload, JsonOptions, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return OperationResult.Ok($"Added {artist.ArtistName} to Lidarr.");
+            }
+
+            return response.StatusCode == System.Net.HttpStatusCode.Conflict
+                ? OperationResult.Fail($"{artist.ArtistName} already appears to exist in Lidarr.")
+                : OperationResult.Fail($"Lidarr add failed: {(int)response.StatusCode}.");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or UriFormatException)
+        {
+            return OperationResult.Fail($"Lidarr add failed: {ex.Message}");
+        }
+    }
+
+    private async Task<IReadOnlyList<T>> GetJsonOrEmptyAsync<T>(string url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var response = await httpClient.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return [];
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<T>>(JsonOptions, cancellationToken) ?? [];
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return [];
+        }
     }
 
     private async Task<Core.Options.LidarrOptions?> ConfigureClientAsync(CancellationToken cancellationToken)
