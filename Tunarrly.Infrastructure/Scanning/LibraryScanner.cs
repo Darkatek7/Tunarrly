@@ -48,6 +48,8 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
             }
         }
 
+        await RemoveMissingTracksAsync(db, path, files, cancellationToken);
+
         job.Status = JobStatuses.Completed;
         job.CurrentFile = null;
         job.FinishedAt = DateTimeOffset.UtcNow;
@@ -58,6 +60,12 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
     private static async Task IndexFileAsync(TunarrlyDbContext db, string file, CancellationToken cancellationToken)
     {
         var info = new FileInfo(file);
+        var existingTrack = await db.LibraryTracks.SingleOrDefaultAsync(x => x.Path == file, cancellationToken);
+        if (existingTrack is not null && existingTrack.FileSizeBytes == info.Length && existingTrack.FileModifiedAt == info.LastWriteTimeUtc)
+        {
+            return;
+        }
+
         using var tagFile = TagLib.File.Create(file);
         var tag = tagFile.Tag;
         var title = string.IsNullOrWhiteSpace(tag.Title) ? Path.GetFileNameWithoutExtension(file) : tag.Title;
@@ -75,7 +83,7 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var track = await db.LibraryTracks.SingleOrDefaultAsync(x => x.Path == file, cancellationToken);
+        var track = existingTrack;
         if (track is null)
         {
             track = new LibraryTrack { Path = file, CreatedAt = DateTimeOffset.UtcNow };
@@ -120,5 +128,19 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
     {
         if (!MusicTextNormalizer.IsLikelyArtistName(artistName)) return;
         db.TrackArtistCredits.Add(new TrackArtistCredit { TrackId = trackId, ArtistName = artistName, NormalizedArtistName = MusicTextNormalizer.NormalizeName(artistName), CreditType = creditType });
+    }
+
+    private static async Task RemoveMissingTracksAsync(TunarrlyDbContext db, string libraryPath, IReadOnlyCollection<string> discoveredFiles, CancellationToken cancellationToken)
+    {
+        var discovered = discoveredFiles.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var tracks = await db.LibraryTracks.Where(x => x.Path.StartsWith(libraryPath)).ToListAsync(cancellationToken);
+        var missing = tracks.Where(x => !discovered.Contains(x.Path)).ToArray();
+        if (missing.Length == 0)
+        {
+            return;
+        }
+
+        db.LibraryTracks.RemoveRange(missing);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }
