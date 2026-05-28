@@ -31,35 +31,48 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
         await db.SaveChangesAsync(cancellationToken);
         var failedFiles = new List<string>();
 
-        foreach (var file in files)
+        try
         {
-            job.CurrentFile = Path.GetFileName(file);
-            try
+            foreach (var file in files)
             {
-                if (await IndexFileAsync(db, file, cancellationToken))
+                cancellationToken.ThrowIfCancellationRequested();
+                job.CurrentFile = Path.GetFileName(file);
+                try
                 {
-                    job.FilesScanned++;
+                    if (await IndexFileAsync(db, file, cancellationToken))
+                    {
+                        job.FilesScanned++;
+                    }
+                    else
+                    {
+                        job.FilesSkipped++;
+                    }
                 }
-                else
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    job.FilesSkipped++;
+                    job.FilesFailed++;
+                    failedFiles.Add(Path.GetFileName(file));
+                    job.FailureSummaryJson = JsonSerializer.Serialize(failedFiles.Distinct().Take(10), JsonOptions);
+                    logger.LogWarning(ex, "Failed to index audio file {FileName}", Path.GetFileName(file));
                 }
-            }
-            catch (Exception ex)
-            {
-                job.FilesFailed++;
-                failedFiles.Add(Path.GetFileName(file));
-                job.FailureSummaryJson = JsonSerializer.Serialize(failedFiles.Distinct().Take(10), JsonOptions);
-                logger.LogWarning(ex, "Failed to index audio file {FileName}", Path.GetFileName(file));
+
+                if ((job.FilesScanned + job.FilesSkipped + job.FilesFailed) % 25 == 0)
+                {
+                    await db.SaveChangesAsync(CancellationToken.None);
+                }
             }
 
-            if ((job.FilesScanned + job.FilesSkipped + job.FilesFailed) % 25 == 0)
-            {
-                await db.SaveChangesAsync(cancellationToken);
-            }
+            await RemoveMissingTracksAsync(db, path, files, cancellationToken);
         }
-
-        await RemoveMissingTracksAsync(db, path, files, cancellationToken);
+        catch (OperationCanceledException)
+        {
+            job.Status = JobStatuses.Cancelled;
+            job.CurrentFile = null;
+            job.ErrorMessage = "Library scan cancelled. Partial progress was kept.";
+            job.FinishedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(CancellationToken.None);
+            return OperationResult.Fail("Library scan cancelled.");
+        }
 
         job.Status = JobStatuses.Completed;
         job.CurrentFile = null;

@@ -1,13 +1,15 @@
 @page "/scan-jobs"
 @implements IAsyncDisposable
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject IScanJobService ScanJobService
+@inject ISnackbar Snackbar
 
 <PageTitle>Scan Jobs</PageTitle>
 <MudText Typo="Typo.h3" Class="fw-800 mb-4">Scan Jobs</MudText>
 <MudAlert Severity="Severity.Info" Class="mb-4">Scan progress hides local file paths. Current and failed files are shown by filename only.</MudAlert>
 <MudTable Items="_jobs" Hover="true" Elevation="0">
     <HeaderContent>
-        <MudTh>Status</MudTh><MudTh>Library</MudTh><MudTh>Progress</MudTh><MudTh>Indexed</MudTh><MudTh>Skipped</MudTh><MudTh>Failed</MudTh><MudTh>Current</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh>
+        <MudTh>Status</MudTh><MudTh>Library</MudTh><MudTh>Progress</MudTh><MudTh>Indexed</MudTh><MudTh>Skipped</MudTh><MudTh>Failed</MudTh><MudTh>Current</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd><MudChip T="string" Color="@StatusColor(context.Status)">@context.Status</MudChip></MudTd>
@@ -28,6 +30,9 @@
         <MudTd>@(context.CurrentFile ?? "-")</MudTd>
         <MudTd>@context.StartedAt.LocalDateTime</MudTd>
         <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
+        <MudTd>
+            <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Disabled="context.Status != JobStatuses.Running" OnClick="CancelRunningScan">Cancel</MudButton>
+        </MudTd>
     </RowTemplate>
 </MudTable>
 
@@ -57,13 +62,26 @@
         }
     }
 
+    private async Task CancelRunningScan()
+    {
+        var result = await ScanJobService.CancelRunningScanAsync();
+        Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+        await Load();
+    }
+
     public ValueTask DisposeAsync()
     {
         _timer?.Dispose();
         return ValueTask.CompletedTask;
     }
 
-    private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;
+    private static Color StatusColor(string status) => status switch
+    {
+        JobStatuses.Completed => Color.Success,
+        JobStatuses.Failed => Color.Error,
+        JobStatuses.Cancelled => Color.Warning,
+        _ => Color.Info
+    };
 
     private static int Processed(ScanJob job) => job.FilesScanned + job.FilesSkipped + job.FilesFailed;
 

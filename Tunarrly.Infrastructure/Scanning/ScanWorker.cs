@@ -5,7 +5,7 @@ using Tunarrly.Core.Services;
 
 namespace Tunarrly.Infrastructure.Scanning;
 
-public sealed class ScanWorker(IScanJobQueue queue, IServiceScopeFactory scopeFactory, ILogger<ScanWorker> logger) : BackgroundService
+public sealed class ScanWorker(IScanJobQueue queue, IScanCancellationCoordinator cancellationCoordinator, IServiceScopeFactory scopeFactory, ILogger<ScanWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -25,7 +25,15 @@ public sealed class ScanWorker(IScanJobQueue queue, IServiceScopeFactory scopeFa
             {
                 using var scope = scopeFactory.CreateScope();
                 var scanner = scope.ServiceProvider.GetRequiredService<ILibraryScanner>();
-                await scanner.ScanAsync(request.LibraryPath, stoppingToken);
+                var scanToken = cancellationCoordinator.BeginScan(stoppingToken);
+                try
+                {
+                    await scanner.ScanAsync(request.LibraryPath, scanToken);
+                }
+                finally
+                {
+                    cancellationCoordinator.EndScan();
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

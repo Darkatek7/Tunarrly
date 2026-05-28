@@ -227,7 +227,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - MVP is single-user and has no built-in authentication.
 - Real Lidarr add-artist behavior can vary by Lidarr version and profiles; test with your instance before relying on it.
 - Scanner metadata quality depends on your tags.
-- Background scans run in-process; cancelling running scans is planned but not complete.
+- Background scans run in-process; running scans can be cancelled from the Scan Jobs page, but queued job persistence is intentionally simple for the MVP.
 - AI output quality depends entirely on the configured model/provider.
 - Stored secrets are masked in the UI. Configure `SECRETS__ENCRYPTIONKEY` to encrypt saved secrets at rest.
 

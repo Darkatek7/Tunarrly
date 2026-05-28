@@ -42,4 +42,5 @@ public static class JobStatuses
     public const string Running = "Running";
     public const string Completed = "Completed";
     public const string Failed = "Failed";
+    public const string Cancelled = "Cancelled";
 }

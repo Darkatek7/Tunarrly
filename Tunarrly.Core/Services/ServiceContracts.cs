@@ -50,6 +50,7 @@ public interface ILibraryScanner
 public interface IScanJobService
 {
     Task<OperationResult> EnqueueScanAsync(string? libraryPath = null, CancellationToken cancellationToken = default);
+    Task<OperationResult> CancelRunningScanAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IRecommendationService

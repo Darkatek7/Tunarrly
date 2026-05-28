@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<ILidarrSyncService, LidarrSyncService>();
         services.AddScoped<ILibraryScanner, LibraryScanner>();
         services.AddSingleton<IScanJobQueue, ScanJobQueue>();
+        services.AddSingleton<IScanCancellationCoordinator, ScanCancellationCoordinator>();
         services.AddScoped<IScanJobService, ScanJobService>();
         services.AddHostedService<ScanWorker>();
         services.AddScoped<IRecommendationService, RecommendationService>();
