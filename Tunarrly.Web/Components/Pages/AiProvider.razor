@@ -11,6 +11,9 @@
 }
 else
 {
+    <MudAlert Severity="Severity.Warning" Class="mb-4">
+        AI is optional and disabled by default. When enabled, Tunarrly sends a compact music profile to your configured AI provider, including artists, genres, local recommendations, ignored artists, and Lidarr artists to avoid. It must not send local file paths, API keys, tokens, or raw filesystem structure.
+    </MudAlert>
     <MudCard Class="pa-4" Elevation="0">
         <MudGrid>
             <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_options.Enabled" Color="Color.Primary" /></MudItem>

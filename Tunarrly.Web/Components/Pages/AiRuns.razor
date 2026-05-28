@@ -4,7 +4,7 @@
 <PageTitle>AI Runs</PageTitle>
 <MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Runs</MudText>
 <MudTable Items="_runs" Hover="true" Elevation="0">
-    <HeaderContent><MudTh>Status</MudTh><MudTh>Provider</MudTh><MudTh>Model</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Error</MudTh></HeaderContent>
+    <HeaderContent><MudTh>Status</MudTh><MudTh>Provider</MudTh><MudTh>Model</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Error</MudTh><MudTh>Actions</MudTh></HeaderContent>
     <RowTemplate>
         <MudTd><MudChip T="string" Color="@StatusColor(context.Status)">@context.Status</MudChip></MudTd>
         <MudTd>@context.ProviderBaseUrl</MudTd>
@@ -12,6 +12,7 @@
         <MudTd>@context.StartedAt.LocalDateTime</MudTd>
         <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
         <MudTd>@context.ErrorMessage</MudTd>
+        <MudTd><MudButton Size="Size.Small" Href="@($"ai-runs/{context.Id}")">View</MudButton></MudTd>
     </RowTemplate>
 </MudTable>
 
