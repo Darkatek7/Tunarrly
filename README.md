@@ -61,6 +61,22 @@ volumes:
 
 The music mount is read-only. Tunarrly must never write to `/music`.
 
+## Container Image
+
+The public image is published to GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/darkatek7/tunarrly:latest
+```
+
+You can use the image instead of building locally by changing Compose to:
+
+```yaml
+services:
+  tunarrly:
+    image: ghcr.io/darkatek7/tunarrly:latest
+```
+
 ## Required Lidarr Settings
 
 Set these in `.env` or in the Settings page:
