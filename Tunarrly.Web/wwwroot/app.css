@@ -29,6 +29,35 @@ a {
         linear-gradient(180deg, #0b0d10 0%, #10131a 100%);
 }
 
+.login-page {
+    min-height: calc(100vh - 96px);
+    align-items: center;
+}
+
+.login-label {
+    color: #c9bda8;
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.login-input {
+    background: rgba(5, 6, 8, 0.45);
+    border: 1px solid rgba(214, 168, 79, 0.22);
+    border-radius: 10px;
+    color: #f1eadc;
+    display: block;
+    outline: none;
+    padding: 0.85rem 0.9rem;
+    width: 100%;
+}
+
+.login-input:focus {
+    border-color: rgba(214, 168, 79, 0.75);
+    box-shadow: 0 0 0 3px rgba(214, 168, 79, 0.12);
+}
+
 .brand-title, .fw-800 {
     font-weight: 800;
     letter-spacing: -0.04em;

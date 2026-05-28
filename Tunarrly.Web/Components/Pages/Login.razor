@@ -1,0 +1,47 @@
+@page "/login"
+@inject Microsoft.Extensions.Options.IOptions<AuthOptions> AuthOptions
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<MudGrid Justify="Justify.Center" Class="login-page">
+    <MudItem xs="12" sm="8" md="5" lg="4">
+        <MudCard Class="hero-card pa-6" Elevation="0">
+            <MudText Typo="Typo.h3" Class="fw-800">Tunarrly</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">Sign in to your local music discovery companion.</MudText>
+
+            @if (!AuthOptions.Value.Enabled)
+            {
+                <MudAlert Severity="Severity.Info">Built-in login is disabled. Return to the dashboard.</MudAlert>
+                <MudButton Href="/" Class="mt-4" Variant="Variant.Filled" Color="Color.Primary">Open Dashboard</MudButton>
+            }
+            else
+            {
+                @if (HasError)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">Invalid username or password.</MudAlert>
+                }
+                <form method="post" action="/login-submit">
+                    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                    <label class="login-label" for="username">Username</label>
+                    <input id="username" class="login-input" name="username" autocomplete="username" autofocus />
+                    <label class="login-label mt-3" for="password">Password</label>
+                    <input id="password" class="login-input" name="password" type="password" autocomplete="current-password" />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true">Sign in</MudButton>
+                </form>
+            }
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string ReturnUrl => GetQuery("returnUrl") is { Length: > 0 } value ? value : "/";
+    private bool HasError => GetQuery("error") == "1";
+
+    private string? GetQuery(string key)
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        return query.TryGetValue(key, out var value) ? value.ToString() : null;
+    }
+}

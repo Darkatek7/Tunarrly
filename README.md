@@ -36,6 +36,18 @@ Screenshots will be added after a tagged release. Current UI areas include Dashb
 11. Generate local recommendations.
 12. Enable AI only if you want optional second-stage AI recommendations.
 
+## Built-In Login
+
+Built-in single-user login is disabled by default. Enable it with environment variables:
+
+```env
+AUTH__ENABLED=true
+AUTH__USERNAME=admin
+AUTH__PASSWORD=change-this-password
+```
+
+When enabled, all app pages require login except `/login`, `/health`, `/ready`, and static assets. For internet-facing installs, prefer keeping Tunarrly behind a reverse proxy with HTTPS even when built-in login is enabled.
+
 ## Docker Compose
 
 Copy `.env.example` to `.env`, copy `docker-compose.example.yml` to `docker-compose.yml`, edit local values, then run:
@@ -182,7 +194,10 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 ## Privacy and Security
 
 - Do not expose Tunarrly publicly without authentication in front of it.
-- Lidarr API keys and AI provider tokens are stored as plaintext in SQLite when saved through the UI.
+- Built-in login is available via `AUTH__ENABLED=true` and env-seeded credentials.
+- Lidarr API keys and AI provider tokens are encrypted in SQLite when `SECRETS__ENCRYPTIONKEY` is configured.
+- Without `SECRETS__ENCRYPTIONKEY`, saved secrets fall back to plaintext local SQLite storage.
+- Losing `SECRETS__ENCRYPTIONKEY` makes encrypted saved secrets unrecoverable; clear and re-enter them if the key is lost.
 - Saved secrets are masked in the UI and are not intentionally logged.
 - Use the Settings page to clear individual secrets or all saved secrets.
 - AI is optional and disabled by default.
@@ -204,7 +219,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - Scanner metadata quality depends on your tags.
 - Background scans run in-process; cancelling running scans is planned but not complete.
 - AI output quality depends entirely on the configured model/provider.
-- Stored secrets are masked in the UI, but currently persisted in SQLite rather than encrypted.
+- Stored secrets are masked in the UI. Configure `SECRETS__ENCRYPTIONKEY` to encrypt saved secrets at rest.
 
 ## Troubleshooting
 

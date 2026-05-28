@@ -10,7 +10,8 @@ public sealed class AppSettingsService(
     IDbContextFactory<TunarrlyDbContext> dbFactory,
     IOptions<LidarrOptions> lidarrDefaults,
     IOptions<LibraryOptions> libraryDefaults,
-    IOptions<AiOptions> aiDefaults) : IAppSettingsService
+    IOptions<AiOptions> aiDefaults,
+    SecretProtector secretProtector) : IAppSettingsService
 {
     public async Task<LidarrOptions> GetLidarrOptionsAsync(CancellationToken cancellationToken = default)
     {
@@ -115,9 +116,34 @@ public sealed class AppSettingsService(
     private async Task<Dictionary<string, string>> GetValuesAsync(string prefix, CancellationToken cancellationToken)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-        return await db.AppSettings
+        var settings = await db.AppSettings
             .Where(x => x.Key.StartsWith(prefix))
-            .ToDictionaryAsync(x => x.Key, x => x.Value, cancellationToken);
+            .ToListAsync(cancellationToken);
+        var values = new Dictionary<string, string>();
+        var migrated = false;
+        foreach (var setting in settings)
+        {
+            if (!setting.IsSecret)
+            {
+                values[setting.Key] = setting.Value;
+                continue;
+            }
+
+            values[setting.Key] = secretProtector.Unprotect(setting.Value);
+            if (secretProtector.IsEnabled && !string.IsNullOrEmpty(setting.Value) && !secretProtector.IsProtected(setting.Value))
+            {
+                setting.Value = secretProtector.Protect(setting.Value);
+                setting.UpdatedAt = DateTimeOffset.UtcNow;
+                migrated = true;
+            }
+        }
+
+        if (migrated)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return values;
     }
 
     private async Task SaveValuesAsync(Dictionary<string, (string Value, bool IsSecret)> values, CancellationToken cancellationToken)
@@ -128,7 +154,7 @@ public sealed class AppSettingsService(
             var existing = await db.AppSettings.SingleOrDefaultAsync(x => x.Key == key, cancellationToken);
             if (existing is null)
             {
-                db.AppSettings.Add(new AppSetting { Key = key, Value = value.Value, IsSecret = value.IsSecret });
+                db.AppSettings.Add(new AppSetting { Key = key, Value = value.IsSecret ? secretProtector.Protect(value.Value) : value.Value, IsSecret = value.IsSecret });
                 continue;
             }
 
@@ -137,7 +163,7 @@ public sealed class AppSettingsService(
                 continue;
             }
 
-            existing.Value = value.Value;
+            existing.Value = value.IsSecret ? secretProtector.Protect(value.Value) : value.Value;
             existing.IsSecret = value.IsSecret;
             existing.UpdatedAt = DateTimeOffset.UtcNow;
         }

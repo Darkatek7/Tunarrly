@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Tunarrly.Core.Models;
 using Tunarrly.Core.Normalization;
 using Tunarrly.Core.Options;
@@ -49,7 +50,7 @@ public sealed class RecommendationServiceIntegrationTests
 
     private static RecommendationService CreateService(IDbContextFactory<TunarrlyDbContext> dbFactory)
     {
-        var settings = new AppSettingsService(dbFactory, InfrastructureTestHelpers.Options(new LidarrOptions()), InfrastructureTestHelpers.Options(new LibraryOptions()), InfrastructureTestHelpers.Options(new AiOptions()));
+        var settings = new AppSettingsService(dbFactory, InfrastructureTestHelpers.Options(new LidarrOptions()), InfrastructureTestHelpers.Options(new LibraryOptions()), InfrastructureTestHelpers.Options(new AiOptions()), new SecretProtector(Options.Create(new SecretsOptions())));
         return new RecommendationService(dbFactory, new NoOpAiClient(), new NoOpLidarrClient(), new NoOpLidarrSync(), settings);
     }
 

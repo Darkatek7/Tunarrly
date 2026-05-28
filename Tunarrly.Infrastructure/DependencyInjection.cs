@@ -20,6 +20,8 @@ public static class DependencyInjection
         services.Configure<LibraryOptions>(configuration.GetSection("Library"));
         services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
         services.Configure<AiOptions>(configuration.GetSection("AI"));
+        services.Configure<AuthOptions>(configuration.GetSection("Auth"));
+        services.Configure<SecretsOptions>(configuration.GetSection("Secrets"));
 
         var databasePath = configuration["DATABASE:PATH"] ?? configuration["Database:Path"] ?? "data/tunarrly.db";
         var dataDirectory = Path.GetDirectoryName(databasePath);
@@ -32,6 +34,7 @@ public static class DependencyInjection
         services.AddHttpClient<ILidarrClient, LidarrClient>();
         services.AddHttpClient<IAiProviderClient, AiProviderClient>();
         services.AddScoped<IAiContextService, AiContextService>();
+        services.AddSingleton<SecretProtector>();
         services.AddScoped<IAppSettingsService, AppSettingsService>();
         services.AddScoped<ILidarrSyncService, LidarrSyncService>();
         services.AddScoped<ILibraryScanner, LibraryScanner>();

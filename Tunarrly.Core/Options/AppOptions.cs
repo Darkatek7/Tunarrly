@@ -32,3 +32,15 @@ public sealed class AiOptions
     public int MaxInputArtists { get; set; } = 200;
     public int MaxRecommendations { get; set; } = 25;
 }
+
+public sealed class AuthOptions
+{
+    public bool Enabled { get; set; }
+    public string Username { get; set; } = "admin";
+    public string Password { get; set; } = string.Empty;
+}
+
+public sealed class SecretsOptions
+{
+    public string EncryptionKey { get; set; } = string.Empty;
+}
