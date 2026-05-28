@@ -41,6 +41,14 @@ public sealed record LidarrLookupResult(
     string? Overview,
     string? Disambiguation);
 
+public sealed record LidarrAddOptions(
+    string RootFolderPath,
+    int QualityProfileId,
+    int MetadataProfileId,
+    string Monitor,
+    bool SearchForMissingAlbums,
+    bool Monitored);
+
 public sealed record LidarrQualityProfileDto(int Id, string Name);
 
 public sealed record LidarrMetadataProfileDto(int Id, string Name);

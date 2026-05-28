@@ -64,21 +64,22 @@ public sealed class LidarrClient(HttpClient httpClient, IAppSettingsService sett
         return results.Select(x => new LidarrLookupResult(x.ArtistName ?? string.Empty, x.ForeignArtistId, x.MusicBrainzId, x.Overview, x.Disambiguation)).ToArray();
     }
 
-    public async Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, LidarrAddOptions? addOptions = null, CancellationToken cancellationToken = default)
     {
         var options = await ConfigureClientAsync(cancellationToken);
         if (options is null) return OperationResult.Fail("Lidarr is not configured.");
         if (string.IsNullOrWhiteSpace(artist.ForeignArtistId)) return OperationResult.Fail("Selected Lidarr match does not include a foreign artist id.");
+        var add = addOptions ?? new LidarrAddOptions(options.DefaultRootFolder, options.DefaultQualityProfileId, options.DefaultMetadataProfileId, options.DefaultMonitor, options.SearchOnAdd, true);
 
         var payload = new
         {
             artistName = artist.ArtistName,
             foreignArtistId = artist.ForeignArtistId,
-            monitored = true,
-            rootFolderPath = options.DefaultRootFolder,
-            qualityProfileId = options.DefaultQualityProfileId,
-            metadataProfileId = options.DefaultMetadataProfileId,
-            addOptions = new { monitor = options.DefaultMonitor, searchForMissingAlbums = options.SearchOnAdd }
+            monitored = add.Monitored,
+            rootFolderPath = add.RootFolderPath,
+            qualityProfileId = add.QualityProfileId,
+            metadataProfileId = add.MetadataProfileId,
+            addOptions = new { monitor = add.Monitor, searchForMissingAlbums = add.SearchForMissingAlbums }
         };
 
         try

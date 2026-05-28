@@ -85,6 +85,6 @@ public sealed class RecommendationServiceIntegrationTests
         public Task<IReadOnlyList<LidarrMetadataProfileDto>> GetMetadataProfilesAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LidarrMetadataProfileDto>>([]);
         public Task<IReadOnlyList<LidarrRootFolderDto>> GetRootFoldersAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LidarrRootFolderDto>>([]);
         public Task<IReadOnlyList<LidarrLookupResult>> SearchArtistAsync(string artistName, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LidarrLookupResult>>([]);
-        public Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, CancellationToken cancellationToken = default) => Task.FromResult(OperationResult.Ok("ok"));
+        public Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, LidarrAddOptions? addOptions = null, CancellationToken cancellationToken = default) => Task.FromResult(OperationResult.Ok("ok"));
     }
 }

@@ -2,6 +2,7 @@
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
 @inject ILidarrClient Lidarr
 @inject IRecommendationService RecommendationService
+@inject IAppSettingsService Settings
 @inject ISnackbar Snackbar
 
 <PageTitle>Recommendation Detail</PageTitle>
@@ -131,6 +132,17 @@ else
                                 <MudRadio T="LidarrLookupResult" Value="match">@match.ArtistName @match.Disambiguation</MudRadio>
                             }
                         </MudRadioGroup>
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.h6">Add options</MudText>
+                        <MudTextField Label="Root folder" @bind-Value="_rootFolderPath" />
+                        <MudNumericField Label="Quality profile ID" @bind-Value="_qualityProfileId" Min="1" />
+                        <MudNumericField Label="Metadata profile ID" @bind-Value="_metadataProfileId" Min="1" />
+                        <MudTextField Label="Monitor behavior" @bind-Value="_monitor" />
+                        <MudSwitch T="bool" Label="Monitor artist" @bind-Value="_monitored" Color="Color.Primary" />
+                        <MudSwitch T="bool" Label="Search for missing albums after add" @bind-Value="_searchForMissingAlbums" Color="Color.Warning" />
+                        <MudAlert Severity="Severity.Warning" Class="my-3">Lidarr search is explicit per add. Leave it off to add the artist without triggering album searches.</MudAlert>
+                        <MudText Typo="Typo.h6">Payload preview</MudText>
+                        <pre>@AddPayloadPreview</pre>
                         <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="_selected is null" OnClick="ConfirmAdd">Confirm add</MudButton>
                     }
                 </MudCard>
@@ -146,16 +158,40 @@ else
     private List<RelatedTrackRow> _relatedTracks = [];
     private List<LidarrLookupResult> _matches = [];
     private LidarrLookupResult? _selected;
+    private string _rootFolderPath = string.Empty;
+    private int _qualityProfileId = 1;
+    private int _metadataProfileId = 1;
+    private string _monitor = "all";
+    private bool _monitored = true;
+    private bool _searchForMissingAlbums;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private IReadOnlyList<string> Reasons => Read(_recommendation?.ReasonJson);
     private IReadOnlyList<string> Genres => Read(_recommendation?.GenresJson);
     private IReadOnlyList<string> Related => Read(_recommendation?.RelatedArtistsJson);
     private IEnumerable<IGrouping<string, RecommendationEvidence>> EvidenceGroups => _evidence.GroupBy(x => x.Type).OrderByDescending(x => x.Sum(e => e.Weight));
     private IEnumerable<string> RelatedAlbumTitles => _relatedTracks.Select(x => x.AlbumTitle).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct()!;
+    private string AddPayloadPreview => _selected is null
+        ? "Select a Lidarr match to preview the add payload."
+        : JsonSerializer.Serialize(new
+        {
+            artistName = _selected.ArtistName,
+            foreignArtistId = _selected.ForeignArtistId,
+            monitored = _monitored,
+            rootFolderPath = _rootFolderPath,
+            qualityProfileId = _qualityProfileId,
+            metadataProfileId = _metadataProfileId,
+            addOptions = new { monitor = _monitor, searchForMissingAlbums = _searchForMissingAlbums }
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true });
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
+        var lidarr = await Settings.GetLidarrOptionsAsync();
+        _rootFolderPath = lidarr.DefaultRootFolder;
+        _qualityProfileId = lidarr.DefaultQualityProfileId;
+        _metadataProfileId = lidarr.DefaultMetadataProfileId;
+        _monitor = lidarr.DefaultMonitor;
+        _searchForMissingAlbums = lidarr.SearchOnAdd;
         _recommendation = await db.Recommendations.FindAsync(Id);
         if (_recommendation is not null)
         {
@@ -188,7 +224,8 @@ else
     private async Task ConfirmAdd()
     {
         if (_recommendation is null || _selected is null) return;
-        var result = await RecommendationService.AddToLidarrAsync(_recommendation.Id, _selected);
+        var options = new LidarrAddOptions(_rootFolderPath, _qualityProfileId, _metadataProfileId, _monitor, _searchForMissingAlbums, _monitored);
+        var result = await RecommendationService.AddToLidarrAsync(_recommendation.Id, _selected, options);
         Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
     }
 

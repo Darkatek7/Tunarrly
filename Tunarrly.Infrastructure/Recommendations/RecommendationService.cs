@@ -120,9 +120,9 @@ public sealed class RecommendationService(
         return OperationResult.Ok($"Recommendation marked {status}.");
     }
 
-    public async Task<OperationResult> AddToLidarrAsync(int recommendationId, LidarrLookupResult match, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> AddToLidarrAsync(int recommendationId, LidarrLookupResult match, LidarrAddOptions? addOptions = null, CancellationToken cancellationToken = default)
     {
-        var result = await lidarrClient.AddArtistAsync(match, cancellationToken);
+        var result = await lidarrClient.AddArtistAsync(match, addOptions, cancellationToken);
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var recommendation = await db.Recommendations.FindAsync([recommendationId], cancellationToken);
         if (recommendation is not null)

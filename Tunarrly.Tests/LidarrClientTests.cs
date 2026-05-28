@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Tunarrly.Core.Models;
 using Tunarrly.Core.Options;
 using Tunarrly.Core.Services;
 using Tunarrly.Infrastructure.Lidarr;
@@ -61,7 +62,28 @@ public sealed class LidarrClientTests
         Assert.Contains("\"rootFolderPath\":\"/music\"", body);
         Assert.Contains("\"qualityProfileId\":1", body);
         Assert.Contains("\"metadataProfileId\":1", body);
+        Assert.Contains("\"searchForMissingAlbums\":false", body);
         Assert.DoesNotContain("secret-key", body);
+    }
+
+    [Fact]
+    public async Task AddArtistAsync_UsesPerAddOptions()
+    {
+        string? body = null;
+        var client = new LidarrClient(new HttpClient(new AsyncStubHandler(async request =>
+        {
+            body = await request.Content!.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.Created);
+        })), new FakeSettings());
+
+        await client.AddArtistAsync(new("Burial", "foreign-id", null, null, null), new LidarrAddOptions("/custom", 9, 8, "future", true, false));
+
+        Assert.Contains("\"rootFolderPath\":\"/custom\"", body);
+        Assert.Contains("\"qualityProfileId\":9", body);
+        Assert.Contains("\"metadataProfileId\":8", body);
+        Assert.Contains("\"monitored\":false", body);
+        Assert.Contains("\"monitor\":\"future\"", body);
+        Assert.Contains("\"searchForMissingAlbums\":true", body);
     }
 
     private static HttpResponseMessage Json(string json) => new(HttpStatusCode.OK)

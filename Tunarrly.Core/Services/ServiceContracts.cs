@@ -22,7 +22,7 @@ public interface ILidarrClient
     Task<IReadOnlyList<LidarrMetadataProfileDto>> GetMetadataProfilesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LidarrRootFolderDto>> GetRootFoldersAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LidarrLookupResult>> SearchArtistAsync(string artistName, CancellationToken cancellationToken = default);
-    Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, CancellationToken cancellationToken = default);
+    Task<OperationResult> AddArtistAsync(LidarrLookupResult artist, LidarrAddOptions? addOptions = null, CancellationToken cancellationToken = default);
 }
 
 public interface IAiProviderClient
@@ -56,7 +56,7 @@ public interface IRecommendationService
     Task<OperationResult> GenerateLocalAsync(CancellationToken cancellationToken = default);
     Task<OperationResult> GenerateAiAsync(CancellationToken cancellationToken = default);
     Task<OperationResult> SetStatusAsync(int recommendationId, string status, CancellationToken cancellationToken = default);
-    Task<OperationResult> AddToLidarrAsync(int recommendationId, LidarrLookupResult match, CancellationToken cancellationToken = default);
+    Task<OperationResult> AddToLidarrAsync(int recommendationId, LidarrLookupResult match, LidarrAddOptions? addOptions = null, CancellationToken cancellationToken = default);
 }
 
 public interface IDashboardService
