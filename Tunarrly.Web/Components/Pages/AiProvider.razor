@@ -15,6 +15,16 @@ else
     <MudAlert Severity="Severity.Warning" Class="mb-4">
         AI is optional and disabled by default. When enabled, Tunarrly sends a compact music profile to your configured AI provider, including artists, genres, local recommendations, ignored artists, and Lidarr artists to avoid. It must not send local file paths, API keys, tokens, or raw filesystem structure.
     </MudAlert>
+    <MudCard Class="pa-4 mb-4" Elevation="0">
+        <MudText Typo="Typo.h5" Class="fw-800">Provider presets</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Presets only fill endpoint and model defaults. Saved tokens are not changed.</MudText>
+        <MudStack Row="true" Spacing="2" Style="flex-wrap: wrap;">
+            @foreach (var preset in Presets)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="() => ApplyPreset(preset)">@preset.Name</MudButton>
+            }
+        </MudStack>
+    </MudCard>
     <MudCard Class="pa-4" Elevation="0">
         <MudGrid>
             <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_options.Enabled" Color="Color.Primary" /></MudItem>
@@ -79,6 +89,14 @@ else
     private AiOptions? _options;
     private AiContextPreview? _preview;
     private bool _secretConfigured;
+    private static readonly AiProviderPreset[] Presets =
+    [
+        new("OpenAI-compatible cloud", "https://api.openai.com/v1", "gpt-4.1-mini", true),
+        new("Ollama", "http://ollama:11434/v1", "llama3.1", false),
+        new("LM Studio", "http://host.docker.internal:1234/v1", "local-model", false),
+        new("LocalAI", "http://localai:8080/v1", "gpt-4", false),
+        new("vLLM", "http://vllm:8000/v1", "meta-llama/Llama-3.1-8B-Instruct", false)
+    ];
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,6 +106,16 @@ else
     }
 
     private async Task SaveClicked() => await Save();
+
+    private void ApplyPreset(AiProviderPreset preset)
+    {
+        if (_options is null) return;
+        _options.BaseUrl = preset.BaseUrl;
+        _options.Model = preset.Model;
+        _options.Enabled = preset.EnableByDefault;
+        _preview = null;
+        Snackbar.Add($"Applied {preset.Name} preset. Save to persist it.", Severity.Info);
+    }
 
     private async Task<bool> Save()
     {
@@ -125,4 +153,6 @@ else
         _secretConfigured = false;
         Snackbar.Add("Saved AI token cleared.", Severity.Success);
     }
+
+    private sealed record AiProviderPreset(string Name, string BaseUrl, string Model, bool EnableByDefault);
 }

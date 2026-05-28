@@ -112,6 +112,8 @@ Examples:
 - LocalAI: `AI__BASEURL=http://localai:8080/v1`
 - vLLM: `AI__BASEURL=http://vllm:8000/v1`
 
+The AI Provider page includes presets for these endpoints. Applying a preset does not overwrite a saved token.
+
 Ollama example:
 
 ```env
