@@ -47,6 +47,11 @@ a {
     border-color: rgba(214, 168, 79, 0.16) !important;
 }
 
+.evidence-group {
+    background: rgba(16, 20, 29, 0.72);
+    border-color: rgba(143, 163, 139, 0.18) !important;
+}
+
 pre {
     white-space: pre-wrap;
     word-break: break-word;

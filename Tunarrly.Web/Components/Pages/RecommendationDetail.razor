@@ -16,40 +16,105 @@ else
             <MudText Typo="Typo.h3" Class="fw-800">@_recommendation.ArtistName</MudText>
             <MudStack Row="true" Spacing="1" Class="mt-2">
                 <MudChip T="string" Color="Color.Primary">Score @_recommendation.Score</MudChip>
+                @if (_recommendation.Confidence is not null)
+                {
+                    <MudChip T="string" Color="Color.Info">Confidence @_recommendation.Confidence</MudChip>
+                }
                 <MudChip T="string" Color="Color.Secondary">@_recommendation.Source</MudChip>
-                <MudChip T="string" Variant="Variant.Outlined">@_recommendation.Status</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined" Color="@StatusColor(_recommendation.Status)">@_recommendation.Status</MudChip>
             </MudStack>
         </MudCard>
         <MudGrid>
             <MudItem xs="12" md="8">
                 <MudCard Class="pa-4" Elevation="0">
-                    <MudText Typo="Typo.h5">Explanation</MudText>
+                    <MudText Typo="Typo.h5" Class="fw-800">Why this artist surfaced</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">@ScoreNarrative(_recommendation)</MudText>
                     <MudList T="string">
                         @foreach (var reason in Reasons)
                         {
                             <MudListItem>@reason</MudListItem>
                         }
                     </MudList>
-                    <MudText Typo="Typo.h6" Class="mt-4">Structured Evidence</MudText>
+                    <MudText Typo="Typo.h6" Class="mt-4">Evidence groups</MudText>
                     @if (_evidence.Count == 0)
                     {
                         <MudText Color="Color.Secondary">No structured evidence has been stored for this recommendation yet.</MudText>
                     }
-                    @foreach (var item in _evidence)
+                    @foreach (var group in EvidenceGroups)
                     {
-                        <MudAlert Severity="Severity.Info" Class="my-2">
-                            <strong>@item.Type</strong>: @item.Summary (weight @item.Weight)
-                        </MudAlert>
+                        <MudPaper Class="pa-3 my-2 evidence-group" Outlined="true">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.subtitle1" Class="fw-800">@EvidenceTitle(group.Key)</MudText>
+                                <MudChip T="string" Color="Color.Primary" Size="Size.Small">+@group.Sum(x => x.Weight)</MudChip>
+                            </MudStack>
+                            @foreach (var item in group.OrderByDescending(x => x.Weight))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-2">@item.Summary</MudText>
+                                @if (item.Data.Count > 0)
+                                {
+                                    <MudStack Row="true" Spacing="1" Class="mt-1" Style="flex-wrap: wrap;">
+                                        @foreach (var detail in item.Data)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Label(detail.Key): @detail.Value</MudChip>
+                                        }
+                                    </MudStack>
+                                }
+                            }
+                        </MudPaper>
                     }
                     <MudText Typo="Typo.h6" Class="mt-4">Genres</MudText>
-                    @foreach (var genre in Genres)
+                    @if (Genres.Count == 0)
                     {
-                        <MudChip T="string" Class="ma-1" Color="Color.Secondary" Variant="Variant.Outlined">@genre</MudChip>
+                        <MudText Color="Color.Secondary">No genres captured yet.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var genre in Genres)
+                        {
+                            <MudChip T="string" Class="ma-1" Color="Color.Secondary" Variant="Variant.Outlined">@genre</MudChip>
+                        }
                     }
                     <MudText Typo="Typo.h6" Class="mt-4">Related Artists</MudText>
-                    @foreach (var artist in Related)
+                    @if (Related.Count == 0)
                     {
-                        <MudChip T="string" Class="ma-1" Variant="Variant.Outlined">@artist</MudChip>
+                        <MudText Color="Color.Secondary">No AI-provided related artists captured yet.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var artist in Related)
+                        {
+                            <MudChip T="string" Class="ma-1" Variant="Variant.Outlined">@artist</MudChip>
+                        }
+                    }
+                </MudCard>
+
+                <MudCard Class="pa-4 mt-4" Elevation="0">
+                    <MudText Typo="Typo.h5" Class="fw-800">Indexed tracks and albums</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Only tag-derived titles, artists, genres, and years are shown. Local file paths stay hidden.</MudText>
+                    @if (_relatedTracks.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info">No matching indexed track credits were found for this recommendation.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudStack Row="true" Spacing="1" Class="mb-3" Style="flex-wrap: wrap;">
+                            @foreach (var album in RelatedAlbumTitles.Take(8))
+                            {
+                                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined">@album</MudChip>
+                            }
+                        </MudStack>
+                        <MudTable Items="_relatedTracks" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Track</MudTh><MudTh>Album</MudTh><MudTh>Main artist</MudTh><MudTh>Credit</MudTh><MudTh>Context</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Title</MudTd>
+                                <MudTd>@(context.AlbumTitle ?? "Unknown")</MudTd>
+                                <MudTd>@(context.MainArtist ?? "Unknown")</MudTd>
+                                <MudTd>@context.CreditType</MudTd>
+                                <MudTd>@TrackContext(context)</MudTd>
+                            </RowTemplate>
+                        </MudTable>
                     }
                 </MudCard>
             </MudItem>
@@ -78,12 +143,15 @@ else
     [Parameter] public int Id { get; set; }
     private Recommendation? _recommendation;
     private List<RecommendationEvidence> _evidence = [];
+    private List<RelatedTrackRow> _relatedTracks = [];
     private List<LidarrLookupResult> _matches = [];
     private LidarrLookupResult? _selected;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private IReadOnlyList<string> Reasons => Read(_recommendation?.ReasonJson);
     private IReadOnlyList<string> Genres => Read(_recommendation?.GenresJson);
     private IReadOnlyList<string> Related => Read(_recommendation?.RelatedArtistsJson);
+    private IEnumerable<IGrouping<string, RecommendationEvidence>> EvidenceGroups => _evidence.GroupBy(x => x.Type).OrderByDescending(x => x.Sum(e => e.Weight));
+    private IEnumerable<string> RelatedAlbumTitles => _relatedTracks.Select(x => x.AlbumTitle).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct()!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,6 +163,18 @@ else
             _evidence = relations
                 .SelectMany(x => JsonSerializer.Deserialize<IReadOnlyList<RecommendationEvidence>>(x.EvidenceJson, JsonOptions) ?? [])
                 .ToList();
+            _relatedTracks = await db.TrackArtistCredits
+                .Where(x => x.NormalizedArtistName == _recommendation.NormalizedArtistName)
+                .OrderBy(x => x.Track!.Title)
+                .Select(x => new RelatedTrackRow(
+                    x.Track!.Title,
+                    x.Track.Album == null ? null : x.Track.Album.Title,
+                    x.Track.MainArtist == null ? null : x.Track.MainArtist.Name,
+                    x.CreditType,
+                    x.Track.Genre,
+                    x.Track.Year))
+                .Take(12)
+                .ToListAsync();
         }
     }
 
@@ -114,4 +194,39 @@ else
 
     private static IReadOnlyList<string> Read(string? json)
         => string.IsNullOrWhiteSpace(json) ? [] : JsonSerializer.Deserialize<IReadOnlyList<string>>(json, JsonOptions) ?? [];
+
+    private static string ScoreNarrative(Recommendation recommendation)
+    {
+        var confidence = recommendation.Confidence is null ? "" : $" with {recommendation.Confidence}% model confidence";
+        return recommendation.Source switch
+        {
+            RecommendationSources.Hybrid => $"Hybrid recommendation: local library evidence and optional AI both pointed toward this artist{confidence}.",
+            RecommendationSources.Ai => $"AI recommendation: generated by the configured provider from a sanitized library summary{confidence}.",
+            _ => "Local recommendation: generated from tag-derived library evidence without calling an AI provider."
+        };
+    }
+
+    private static string EvidenceTitle(string type) => type switch
+    {
+        "AlreadyInLibrary" => "Already in your library",
+        "FeaturedCredit" => "Featured artist credits",
+        "SharedGenre" => "Shared genre signal",
+        _ => type
+    };
+
+    private static string Label(string value) => string.Concat(value.Select((character, index) => index > 0 && char.IsUpper(character) ? $" {char.ToLowerInvariant(character)}" : character.ToString()));
+
+    private static string TrackContext(RelatedTrackRow row)
+        => string.Join(" · ", new[] { row.Genre, row.Year?.ToString() }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+    private static Color StatusColor(string status) => status switch
+    {
+        RecommendationStatuses.AddedToLidarr => Color.Success,
+        RecommendationStatuses.FailedToAdd => Color.Error,
+        RecommendationStatuses.Ignored => Color.Warning,
+        RecommendationStatuses.MaybeLater => Color.Info,
+        _ => Color.Default
+    };
+
+    private sealed record RelatedTrackRow(string Title, string? AlbumTitle, string? MainArtist, string CreditType, string? Genre, int? Year);
 }
