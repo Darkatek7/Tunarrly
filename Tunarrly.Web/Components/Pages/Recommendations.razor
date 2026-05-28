@@ -10,7 +10,33 @@
     <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi">Generate AI</MudButton>
 </MudStack>
 
-<MudTable Items="_recommendations" Hover="true" Elevation="0">
+<MudGrid Class="mb-4">
+    <MudItem xs="12" md="4">
+        <MudSelect T="string" Label="Status" @bind-Value="_statusFilter">
+            @foreach (var status in _statusFilters)
+            {
+                <MudSelectItem T="string" Value="@status">@status</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudSelect T="string" Label="Source" @bind-Value="_sourceFilter">
+            @foreach (var source in _sourceFilters)
+            {
+                <MudSelectItem T="string" Value="@source">@source</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudSelect T="string" Label="Sort" @bind-Value="_sort">
+            <MudSelectItem T="string" Value="@SortScore">Score</MudSelectItem>
+            <MudSelectItem T="string" Value="@SortDate">Last calculated</MudSelectItem>
+            <MudSelectItem T="string" Value="@SortArtist">Artist</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+<MudTable Items="FilteredRecommendations" Hover="true" Elevation="0">
     <HeaderContent>
         <MudTh>Artist</MudTh><MudTh>Score</MudTh><MudTh>Confidence</MudTh><MudTh>Source</MudTh><MudTh>Reasons</MudTh><MudTh>Status</MudTh><MudTh>Actions</MudTh>
     </HeaderContent>
@@ -28,8 +54,15 @@
         <MudTd>@context.Status</MudTd>
         <MudTd>
             <MudButton Size="Size.Small" Href="@($"recommendations/{context.Id}")">View</MudButton>
-            <MudButton Size="Size.Small" Color="Color.Warning" OnClick="() => SetStatus(context.Id, RecommendationStatuses.MaybeLater)">Maybe later</MudButton>
-            <MudButton Size="Size.Small" Color="Color.Error" OnClick="() => SetStatus(context.Id, RecommendationStatuses.Ignored)">Ignore</MudButton>
+            @if (context.Status is RecommendationStatuses.Ignored or RecommendationStatuses.MaybeLater)
+            {
+                <MudButton Size="Size.Small" Color="Color.Success" OnClick="() => SetStatus(context.Id, RecommendationStatuses.New)">Restore</MudButton>
+            }
+            else
+            {
+                <MudButton Size="Size.Small" Color="Color.Warning" OnClick="() => SetStatus(context.Id, RecommendationStatuses.MaybeLater)">Maybe later</MudButton>
+                <MudButton Size="Size.Small" Color="Color.Error" OnClick="() => SetStatus(context.Id, RecommendationStatuses.Ignored)">Ignore</MudButton>
+            }
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
@@ -40,6 +73,31 @@
 @code {
     private List<Recommendation> _recommendations = [];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const string All = "All";
+    private const string SortScore = "Score";
+    private const string SortDate = "Last calculated";
+    private const string SortArtist = "Artist";
+    private string _statusFilter = RecommendationStatuses.New;
+    private string _sourceFilter = All;
+    private string _sort = SortScore;
+    private readonly string[] _statusFilters = [All, RecommendationStatuses.New, RecommendationStatuses.Viewed, RecommendationStatuses.MaybeLater, RecommendationStatuses.Ignored, RecommendationStatuses.AddedToLidarr, RecommendationStatuses.FailedToAdd];
+    private readonly string[] _sourceFilters = [All, RecommendationSources.Local, RecommendationSources.Ai, RecommendationSources.Hybrid];
+
+    private IEnumerable<Recommendation> FilteredRecommendations
+    {
+        get
+        {
+            var query = _recommendations.AsEnumerable();
+            if (_statusFilter != All) query = query.Where(x => x.Status == _statusFilter);
+            if (_sourceFilter != All) query = query.Where(x => x.Source == _sourceFilter);
+            return _sort switch
+            {
+                SortDate => query.OrderByDescending(x => x.LastCalculatedAt),
+                SortArtist => query.OrderBy(x => x.ArtistName),
+                _ => query.OrderByDescending(x => x.Score).ThenBy(x => x.ArtistName)
+            };
+        }
+    }
 
     protected override async Task OnInitializedAsync() => await Load();
 
