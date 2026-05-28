@@ -14,6 +14,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: dotnet restore
       - run: dotnet test --no-restore --configuration Release
       - run: dotnet build --no-restore --configuration Release
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

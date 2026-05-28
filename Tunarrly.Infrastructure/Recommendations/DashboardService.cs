@@ -14,6 +14,7 @@ public sealed class DashboardService(IDbContextFactory<TunarrlyDbContext> dbFact
         var ai = await settings.GetAiOptionsAsync(cancellationToken);
         var scanJobs = await db.ScanJobs.ToListAsync(cancellationToken);
         var aiRuns = await db.AiRecommendationRuns.ToListAsync(cancellationToken);
+        var recommendationTimes = await db.Recommendations.Select(x => x.LastCalculatedAt).ToListAsync(cancellationToken);
         var lastScan = scanJobs.OrderByDescending(x => x.StartedAt).FirstOrDefault();
         var lastAiRun = aiRuns.OrderByDescending(x => x.StartedAt).FirstOrDefault();
         return new DashboardStats(
@@ -30,7 +31,7 @@ public sealed class DashboardService(IDbContextFactory<TunarrlyDbContext> dbFact
             lastScan?.FinishedAt ?? lastScan?.StartedAt,
             (await db.LidarrArtists.ToListAsync(cancellationToken)).OrderByDescending(x => x.LastSyncedAt).Select(x => (DateTimeOffset?)x.LastSyncedAt).FirstOrDefault(),
             lastAiRun?.StartedAt,
-            await db.Recommendations.MaxAsync(x => (DateTimeOffset?)x.LastCalculatedAt, cancellationToken),
+            recommendationTimes.OrderByDescending(x => x).Select(x => (DateTimeOffset?)x).FirstOrDefault(),
             lastScan?.Status,
             lastScan?.FilesScanned ?? 0,
             lastScan?.FilesFailed ?? 0,
