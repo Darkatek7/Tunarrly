@@ -29,6 +29,14 @@ Copy `.env.example` to `.env`, edit values, then run:
 docker compose up --build
 ```
 
+To run a local Docker smoke test without a real library, use:
+
+```bash
+bash scripts/docker-smoke.sh
+```
+
+The smoke test builds the image, starts the app, checks `/health` and `/ready`, verifies `/app/data` is writable, and verifies `/music` is read-only.
+
 Default compose service:
 
 ```yaml
