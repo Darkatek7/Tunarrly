@@ -1,12 +1,17 @@
 # Tunarrly
 
+[![Build](https://github.com/Darkatek7/Tunarrly/actions/workflows/build.yml/badge.svg)](https://github.com/Darkatek7/Tunarrly/actions/workflows/build.yml)
+[![Container](https://github.com/Darkatek7/Tunarrly/actions/workflows/container.yml/badge.svg)](https://github.com/Darkatek7/Tunarrly/actions/workflows/container.yml)
+[![GHCR](https://img.shields.io/badge/ghcr.io-darkatek7%2Ftunarrly-blue)](https://github.com/Darkatek7/Tunarrly/pkgs/container/tunarrly)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Tunarrly — AI-assisted music discovery for Lidarr, powered by your own library.**
 
 Tunarrly is a self-hosted Lidarr companion that scans your mounted music library, syncs monitored artists from Lidarr, and recommends new artists using local evidence and optional OpenAI-compatible AI providers.
 
 ## MVP Status
 
-This project is early MVP software. Run it on a trusted LAN or behind an authenticated reverse proxy. The MVP is single-user and does not include built-in authentication.
+This project is early MVP software. Run it on a trusted LAN or behind HTTPS and authentication. Tunarrly includes optional single-user login, but exposed deployments should still use a reverse proxy for TLS and access controls.
 
 ## What It Does
 
@@ -58,6 +63,8 @@ AUTH__PASSWORD=change-this-password
 
 When enabled, all app pages require login except `/login`, `/health`, `/ready`, and static assets. For internet-facing installs, prefer keeping Tunarrly behind a reverse proxy with HTTPS even when built-in login is enabled.
 
+For full deployment patterns, including same-network Lidarr and Caddy, Traefik, and Nginx examples, see [Deployment](docs/deployment.md).
+
 ## Docker Compose
 
 Copy `.env.example` to `.env`, copy `docker-compose.example.yml` to `docker-compose.yml`, edit local values, then run:
@@ -67,6 +74,8 @@ docker compose up -d
 ```
 
 `docker-compose.yml` is intentionally ignored by Git so your local paths, ports, and networking choices are not overwritten by future pulls.
+
+If Lidarr runs in the same Compose project or Docker network, set `LIDARR__BASEURL=http://lidarr:8686`. If Lidarr runs outside Docker, use a URL reachable from inside the Tunarrly container.
 
 To run a local Docker smoke test without a real library, use:
 
@@ -224,7 +233,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 
 ## Known Limitations
 
-- MVP is single-user and has no built-in authentication.
+- MVP is single-user. Built-in login is intentionally simple and should be paired with HTTPS/reverse-proxy access controls for exposed deployments.
 - Real Lidarr add-artist behavior can vary by Lidarr version and profiles; test with your instance before relying on it.
 - Scanner metadata quality depends on your tags.
 - Background scans run in-process; running scans can be cancelled from the Scan Jobs page, but queued job persistence is intentionally simple for the MVP.
@@ -243,11 +252,9 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 ## Roadmap
 
 - Stronger recommendation scoring and evidence drill-downs.
-- Background queue and cancellation for long-running scans.
 - More robust MusicBrainz/Lidarr matching.
-- Authentication option for exposed deployments.
 - More sample datasets and screenshots.
-- Screenshots and release packaging after real-world testing.
+- Release packaging after real-world testing.
 
 ## License
 
