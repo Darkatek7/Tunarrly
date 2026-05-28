@@ -21,6 +21,20 @@ This project is early MVP software. Run it on a trusted LAN or behind an authent
 
 Screenshots will be added as the UI stabilizes.
 
+## First Run
+
+1. Copy `.env.example` to `.env`.
+2. Edit `LIDARR__BASEURL` and `LIDARR__APIKEY`.
+3. Change the music mount in `docker-compose.yml` from `/path/to/music:/music:ro` to your library path.
+4. Start Tunarrly with `docker compose up --build`.
+5. Open `http://localhost:8080`.
+6. Go to Settings and test Lidarr.
+7. Load root folders and profiles from Lidarr.
+8. Sync Lidarr artists.
+9. Scan your library.
+10. Generate local recommendations.
+11. Enable AI only if you want optional second-stage AI recommendations.
+
 ## Docker Compose
 
 Copy `.env.example` to `.env`, edit values, then run:
@@ -61,6 +75,12 @@ LIDARR__DEFAULTMONITOR=all
 LIDARR__SEARCHONADD=false
 ```
 
+To find your Lidarr API key, open Lidarr and go to `Settings -> General -> Security -> API Key`.
+
+If Tunarrly runs in Docker Compose with Lidarr on the same Docker network, `http://lidarr:8686` may work. If Lidarr runs on the host, use an address reachable from inside the Tunarrly container.
+
+The Lidarr integration is covered by compatibility tests for expected API shapes. Final live verification still depends on your own Lidarr version and configuration.
+
 ## Optional AI Provider
 
 AI is disabled by default. Tunarrly supports providers that expose OpenAI-compatible `/chat/completions` endpoints.
@@ -72,6 +92,24 @@ Examples:
 - LM Studio: `AI__BASEURL=http://host.docker.internal:1234/v1`
 - LocalAI: `AI__BASEURL=http://localai:8080/v1`
 - vLLM: `AI__BASEURL=http://vllm:8000/v1`
+
+Ollama example:
+
+```env
+AI__ENABLED=true
+AI__BASEURL=http://ollama:11434/v1
+AI__APIKEY=
+AI__MODEL=llama3.1
+```
+
+LM Studio example:
+
+```env
+AI__ENABLED=true
+AI__BASEURL=http://host.docker.internal:1234/v1
+AI__APIKEY=
+AI__MODEL=local-model
+```
 
 ```env
 AI__ENABLED=false
@@ -121,6 +159,15 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - AI recommendations are optional second-stage recommendations.
 - Overlapping local and AI recommendations are merged and marked as Hybrid.
 - Reasons and evidence are preserved so users can understand why an artist was recommended.
+
+## Known Limitations
+
+- MVP is single-user and has no built-in authentication.
+- Real Lidarr add-artist behavior can vary by Lidarr version and profiles; test with your instance before relying on it.
+- Scanner metadata quality depends on your tags.
+- Background scans run in-process; cancelling running scans is planned but not complete.
+- AI output quality depends entirely on the configured model/provider.
+- Stored secrets are masked in the UI, but currently persisted in SQLite rather than encrypted.
 
 ## Troubleshooting
 
