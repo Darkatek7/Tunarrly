@@ -5,6 +5,9 @@
 
 <PageTitle>Settings</PageTitle>
 <MudText Typo="Typo.h3" Class="fw-800 mb-4">Settings</MudText>
+<MudAlert Severity="Severity.Warning" Class="mb-4">
+    Saved Lidarr keys and AI tokens are masked in the UI but stored as plaintext in the local SQLite database. Keep /app/data private and run Tunarrly only on a trusted LAN or behind authentication.
+</MudAlert>
 
 @if (_lidarr is null || _ai is null || _library is null)
 {
@@ -66,7 +69,10 @@ else
             </MudGrid>
         </MudTabPanel>
     </MudTabs>
-    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save settings</MudButton>
+    <MudStack Row="true" Class="mt-4" Style="flex-wrap: wrap;">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save settings</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearAllSecrets" Disabled="!(_lidarrSecretConfigured || _aiSecretConfigured)">Clear all saved secrets</MudButton>
+    </MudStack>
 }
 
 @code {
@@ -142,5 +148,13 @@ else
         await AppSettings.ClearSecretAsync("AI:ApiKey");
         _aiSecretConfigured = false;
         Snackbar.Add("Saved AI token cleared.", Severity.Success);
+    }
+
+    private async Task ClearAllSecrets()
+    {
+        var cleared = await AppSettings.ClearAllSecretsAsync();
+        _lidarrSecretConfigured = false;
+        _aiSecretConfigured = false;
+        Snackbar.Add($"Cleared {cleared} saved secret{(cleared == 1 ? string.Empty : "s")}.", Severity.Success);
     }
 }

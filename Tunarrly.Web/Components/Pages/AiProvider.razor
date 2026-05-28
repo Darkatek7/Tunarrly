@@ -15,6 +15,9 @@ else
     <MudAlert Severity="Severity.Warning" Class="mb-4">
         AI is optional and disabled by default. When enabled, Tunarrly sends a compact music profile to your configured AI provider, including artists, genres, local recommendations, ignored artists, and Lidarr artists to avoid. It must not send local file paths, API keys, tokens, or raw filesystem structure.
     </MudAlert>
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Saved provider tokens are masked in the UI but stored as plaintext in the local SQLite database. Use local providers without tokens where practical, or protect /app/data carefully.
+    </MudAlert>
     <MudCard Class="pa-4 mb-4" Elevation="0">
         <MudText Typo="Typo.h5" Class="fw-800">Provider presets</MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Presets only fill endpoint and model defaults. Saved tokens are not changed.</MudText>

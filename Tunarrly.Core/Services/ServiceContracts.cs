@@ -12,6 +12,7 @@ public interface IAppSettingsService
     Task SaveAiOptionsAsync(AiOptions options, CancellationToken cancellationToken = default);
     Task SaveLibraryOptionsAsync(LibraryOptions options, CancellationToken cancellationToken = default);
     Task ClearSecretAsync(string key, CancellationToken cancellationToken = default);
+    Task<int> ClearAllSecretsAsync(CancellationToken cancellationToken = default);
 }
 
 public interface ILidarrClient

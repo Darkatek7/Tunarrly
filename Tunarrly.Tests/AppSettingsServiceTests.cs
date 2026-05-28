@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Tunarrly.Core.Options;
+using Tunarrly.Infrastructure.Data;
 using Tunarrly.Infrastructure.Settings;
 
 namespace Tunarrly.Tests;
@@ -31,8 +33,29 @@ public sealed class AppSettingsServiceTests
         Assert.Empty(loaded.ApiKey);
     }
 
+    [Fact]
+    public async Task ClearAllSecretsAsync_BlanksEverySavedSecret()
+    {
+        var factory = InfrastructureTestHelpers.CreateDbFactory();
+        var service = CreateService(factory);
+        await service.SaveLidarrOptionsAsync(new LidarrOptions { BaseUrl = "http://lidarr", ApiKey = "lidarr-secret", DefaultRootFolder = "/music", DefaultQualityProfileId = 1, DefaultMetadataProfileId = 1, DefaultMonitor = "all" });
+        await service.SaveAiOptionsAsync(new AiOptions { Enabled = true, BaseUrl = "http://ai", ApiKey = "ai-secret", Model = "model", TimeoutSeconds = 60, MaxInputArtists = 10, MaxRecommendations = 5 });
+
+        var cleared = await service.ClearAllSecretsAsync();
+
+        Assert.Equal(2, cleared);
+        await using var db = await factory.CreateDbContextAsync();
+        Assert.All(await db.AppSettings.Where(x => x.IsSecret).ToListAsync(), setting => Assert.Equal(string.Empty, setting.Value));
+    }
+
     private static AppSettingsService CreateService() => new(
         InfrastructureTestHelpers.CreateDbFactory(),
+        InfrastructureTestHelpers.Options(new LidarrOptions()),
+        InfrastructureTestHelpers.Options(new LibraryOptions()),
+        InfrastructureTestHelpers.Options(new AiOptions()));
+
+    private static AppSettingsService CreateService(IDbContextFactory<TunarrlyDbContext> dbFactory) => new(
+        dbFactory,
         InfrastructureTestHelpers.Options(new LidarrOptions()),
         InfrastructureTestHelpers.Options(new LibraryOptions()),
         InfrastructureTestHelpers.Options(new AiOptions()));

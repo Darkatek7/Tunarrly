@@ -168,8 +168,9 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 ## Privacy and Security
 
 - Do not expose Tunarrly publicly without authentication in front of it.
-- Lidarr API keys and AI provider tokens are stored in SQLite when saved through the UI.
+- Lidarr API keys and AI provider tokens are stored as plaintext in SQLite when saved through the UI.
 - Saved secrets are masked in the UI and are not intentionally logged.
+- Use the Settings page to clear individual secrets or all saved secrets.
 - AI is optional and disabled by default.
 - Tunarrly does not send local file paths, API keys, tokens, or raw filesystem structure to AI providers.
 - The music library should be mounted read-only with `:ro`.

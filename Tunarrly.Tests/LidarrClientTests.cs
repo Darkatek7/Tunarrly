@@ -114,5 +114,6 @@ public sealed class LidarrClientTests
         public Task SaveAiOptionsAsync(AiOptions options, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SaveLibraryOptionsAsync(LibraryOptions options, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task ClearSecretAsync(string key, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<int> ClearAllSecretsAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
     }
 }

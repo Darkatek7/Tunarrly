@@ -98,6 +98,20 @@ public sealed class AppSettingsService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<int> ClearAllSecretsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        var secrets = await db.AppSettings.Where(x => x.IsSecret && x.Value != string.Empty).ToListAsync(cancellationToken);
+        foreach (var secret in secrets)
+        {
+            secret.Value = string.Empty;
+            secret.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return secrets.Count;
+    }
+
     private async Task<Dictionary<string, string>> GetValuesAsync(string prefix, CancellationToken cancellationToken)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
