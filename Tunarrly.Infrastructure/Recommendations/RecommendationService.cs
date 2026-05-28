@@ -27,6 +27,10 @@ public sealed class RecommendationService(
             .Where(x => x.Genre != null && x.MainArtist != null)
             .Select(x => new { x.MainArtist!.Name, x.MainArtist.NormalizedName, x.Genre })
             .ToListAsync(cancellationToken);
+        var featuredContexts = await db.TrackArtistCredits
+            .Where(x => x.CreditType == CreditTypes.Featured && x.Track != null && x.Track.MainArtist != null)
+            .Select(x => new { x.ArtistName, x.NormalizedArtistName, MainArtistName = x.Track!.MainArtist!.Name, x.Track.Genre })
+            .ToListAsync(cancellationToken);
 
         var candidates = new Dictionary<string, MutableCandidate>();
         foreach (var group in credits.GroupBy(x => x.NormalizedArtistName))
@@ -47,10 +51,30 @@ public sealed class RecommendationService(
             }
         }
 
+        foreach (var group in featuredContexts.GroupBy(x => x.NormalizedArtistName))
+        {
+            if (lidarrNames.Contains(group.Key) || ignored.Contains(group.Key) || string.IsNullOrWhiteSpace(group.Key)) continue;
+            var sourceArtists = group.Select(x => x.MainArtistName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().Take(8).ToArray();
+            if (sourceArtists.Length < 2) continue;
+            var candidate = Get(candidates, group.First().ArtistName);
+            var weight = Math.Min(20, sourceArtists.Length * 5);
+            candidate.Score += weight;
+            candidate.RelatedArtists.AddRange(sourceArtists);
+            var topGenre = group.Select(x => MusicTextNormalizer.NormalizeGenreLabel(x.Genre)).Where(x => !string.IsNullOrWhiteSpace(x)).GroupBy(x => x).OrderByDescending(x => x.Count()).FirstOrDefault()?.Key;
+            if (!string.IsNullOrWhiteSpace(topGenre)) candidate.Genres.Add(topGenre);
+            candidate.Reasons.Add($"Collaborates with {sourceArtists.Length} artists already represented in your library");
+            candidate.Evidence.Add(new RecommendationEvidence("RepeatedCollaborator", $"Collaborates with {sourceArtists.Length} artists already represented in your library", weight, new Dictionary<string, string> { ["libraryArtists"] = string.Join(", ", sourceArtists) }));
+        }
+
         foreach (var genreGroup in genresByArtist.GroupBy(x => x.NormalizedName))
         {
             if (lidarrNames.Contains(genreGroup.Key) || ignored.Contains(genreGroup.Key)) continue;
-            var topGenre = genreGroup.Where(x => !string.IsNullOrWhiteSpace(x.Genre)).GroupBy(x => x.Genre!).OrderByDescending(x => x.Count()).FirstOrDefault();
+            var topGenre = genreGroup
+                .Select(x => MusicTextNormalizer.NormalizeGenreLabel(x.Genre))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .GroupBy(x => x)
+                .OrderByDescending(x => x.Count())
+                .FirstOrDefault();
             if (topGenre is null) continue;
             var candidate = Get(candidates, genreGroup.First().Name);
             candidate.Score += Math.Min(20, topGenre.Count() * 2);

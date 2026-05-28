@@ -39,4 +39,12 @@ public sealed class NormalizationTests
     {
         Assert.False(MusicTextNormalizer.IsLikelyArtistName(input));
     }
+
+    [Theory]
+    [InlineData("electronic; dubstep", "Electronic")]
+    [InlineData("hip-hop / rap", "Hip Hop")]
+    public void NormalizeGenreLabel_UsesFirstCleanGenre(string input, string expected)
+    {
+        Assert.Equal(expected, MusicTextNormalizer.NormalizeGenreLabel(input));
+    }
 }

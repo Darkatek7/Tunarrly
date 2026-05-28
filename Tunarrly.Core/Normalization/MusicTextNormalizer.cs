@@ -21,6 +21,15 @@ public static partial class MusicTextNormalizer
 
     public static string NormalizeTitle(string? value) => NormalizeName(value);
 
+    public static string NormalizeGenreLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        var first = GenreSeparatorRegex().Split(value).Select(CleanArtistName).FirstOrDefault(IsLikelyArtistName);
+        if (string.IsNullOrWhiteSpace(first)) return string.Empty;
+        var normalized = NormalizeName(first);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalized);
+    }
+
     public static IReadOnlyList<string> SplitArtistList(params string?[] values)
     {
         var results = new List<string>();
@@ -98,6 +107,9 @@ public static partial class MusicTextNormalizer
 
     [GeneratedRegex(@"\s*(?:,|;|\s+and\s+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex ConservativeArtistSeparatorRegex();
+
+    [GeneratedRegex(@"\s*(?:,|;|/|\||\\)\s*", RegexOptions.Compiled)]
+    private static partial Regex GenreSeparatorRegex();
 
     [GeneratedRegex(@"(?:\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b|\bvs\.?|\bx\b|&)\s+(?<artists>[^\)\]\[\(]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex CollaborationRegex();

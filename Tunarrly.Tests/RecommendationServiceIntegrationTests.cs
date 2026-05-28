@@ -48,6 +48,24 @@ public sealed class RecommendationServiceIntegrationTests
         Assert.Equal(1, recommendation.Score);
     }
 
+    [Fact]
+    public async Task GenerateLocalAsync_AddsRepeatedCollaboratorEvidence()
+    {
+        var dbFactory = InfrastructureTestHelpers.CreateDbFactory();
+        await SeedFeaturedTrackAsync(dbFactory, "Romy", "Fred again..", "Electronic; Dance");
+        await SeedFeaturedTrackAsync(dbFactory, "Romy", "The xx", "electronic / pop");
+
+        await CreateService(dbFactory).GenerateLocalAsync();
+
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var recommendation = Assert.Single(await db.Recommendations.Where(x => x.ArtistName == "Romy").ToListAsync());
+        Assert.Contains("Collaborates with 2 artists", recommendation.ReasonJson);
+        Assert.Contains("Fred again..", recommendation.RelatedArtistsJson);
+        Assert.Contains("Electronic", recommendation.GenresJson);
+        var relation = Assert.Single(await db.ArtistRelations.Where(x => x.TargetArtistName == "Romy").ToListAsync());
+        Assert.Contains("RepeatedCollaborator", relation.EvidenceJson);
+    }
+
     private static RecommendationService CreateService(IDbContextFactory<TunarrlyDbContext> dbFactory)
     {
         var settings = new AppSettingsService(dbFactory, InfrastructureTestHelpers.Options(new LidarrOptions()), InfrastructureTestHelpers.Options(new LibraryOptions()), InfrastructureTestHelpers.Options(new AiOptions()), new SecretProtector(Options.Create(new SecretsOptions())));
@@ -64,6 +82,19 @@ public sealed class RecommendationServiceIntegrationTests
         db.LibraryTracks.Add(track);
         await db.SaveChangesAsync();
         db.TrackArtistCredits.Add(new TrackArtistCredit { TrackId = track.Id, ArtistName = artistName, NormalizedArtistName = artist.NormalizedName, CreditType = creditType });
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task SeedFeaturedTrackAsync(IDbContextFactory<TunarrlyDbContext> dbFactory, string featuredArtistName, string mainArtistName, string genre)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var mainArtist = new LibraryArtist { Name = mainArtistName, NormalizedName = MusicTextNormalizer.NormalizeName(mainArtistName) };
+        db.LibraryArtists.Add(mainArtist);
+        await db.SaveChangesAsync();
+        var track = new LibraryTrack { Title = $"Track {Guid.NewGuid():N}", NormalizedTitle = "track", Path = $"/music/{Guid.NewGuid():N}.mp3", MainArtistId = mainArtist.Id, Genre = genre, FileModifiedAt = DateTimeOffset.UtcNow };
+        db.LibraryTracks.Add(track);
+        await db.SaveChangesAsync();
+        db.TrackArtistCredits.Add(new TrackArtistCredit { TrackId = track.Id, ArtistName = featuredArtistName, NormalizedArtistName = MusicTextNormalizer.NormalizeName(featuredArtistName), CreditType = CreditTypes.Featured });
         await db.SaveChangesAsync();
     }
 
