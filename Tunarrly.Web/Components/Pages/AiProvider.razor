@@ -1,6 +1,7 @@
 @page "/ai-provider"
 @inject IAppSettingsService Settings
 @inject IAiProviderClient Ai
+@inject IAiContextService AiContext
 @inject ISnackbar Snackbar
 
 <PageTitle>AI Provider</PageTitle>
@@ -31,12 +32,52 @@ else
         <MudStack Row="true" Class="mt-4">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClicked">Save</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Test">Test AI provider</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Info" OnClick="LoadPreview">Preview AI payload</MudButton>
         </MudStack>
     </MudCard>
+
+    @if (_preview is not null)
+    {
+        <MudGrid Class="mt-4">
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5" Class="fw-800">What is sent</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Approx. @_preview.ApproximateBytes bytes before provider transport overhead.</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var item in _preview.Included)
+                        {
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">@item</MudListItem>
+                        }
+                    </MudList>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5" Class="fw-800">What is not sent</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var item in _preview.Excluded)
+                        {
+                            <MudListItem Icon="@Icons.Material.Filled.Block">@item</MudListItem>
+                        }
+                    </MudList>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudAlert Severity="Severity.Info">This preview is the same sanitized context used for AI recommendation requests. It does not include local paths or secrets.</MudAlert>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCard Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5" Class="fw-800">Payload preview</MudText>
+                    <pre>@_preview.PayloadJson</pre>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
 }
 
 @code {
     private AiOptions? _options;
+    private AiContextPreview? _preview;
     private bool _secretConfigured;
 
     protected override async Task OnInitializedAsync()
@@ -70,6 +111,12 @@ else
         if (!await Save()) return;
         var result = await Ai.TestConnectionAsync();
         Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+    }
+
+    private async Task LoadPreview()
+    {
+        var maxArtists = Math.Max(1, _options?.MaxInputArtists ?? 200);
+        _preview = await AiContext.BuildPreviewAsync(maxArtists);
     }
 
     private async Task ClearSecret()

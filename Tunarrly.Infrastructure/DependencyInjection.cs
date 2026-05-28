@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddDbContextFactory<TunarrlyDbContext>(options => options.UseSqlite($"Data Source={databasePath}"));
         services.AddHttpClient<ILidarrClient, LidarrClient>();
         services.AddHttpClient<IAiProviderClient, AiProviderClient>();
+        services.AddScoped<IAiContextService, AiContextService>();
         services.AddScoped<IAppSettingsService, AppSettingsService>();
         services.AddScoped<ILidarrSyncService, LidarrSyncService>();
         services.AddScoped<ILibraryScanner, LibraryScanner>();

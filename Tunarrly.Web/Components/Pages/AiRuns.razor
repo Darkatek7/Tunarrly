@@ -1,8 +1,12 @@
 @page "/ai-runs"
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject ISnackbar Snackbar
 
 <PageTitle>AI Runs</PageTitle>
 <MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Runs</MudText>
+<MudStack Row="true" Class="mb-4">
+    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearAllOutputs" Disabled="_runs.Count == 0">Delete stored AI outputs</MudButton>
+</MudStack>
 <MudTable Items="_runs" Hover="true" Elevation="0">
     <HeaderContent><MudTh>Status</MudTh><MudTh>Provider</MudTh><MudTh>Model</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Error</MudTh><MudTh>Actions</MudTh></HeaderContent>
     <RowTemplate>
@@ -12,16 +16,47 @@
         <MudTd>@context.StartedAt.LocalDateTime</MudTd>
         <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
         <MudTd>@context.ErrorMessage</MudTd>
-        <MudTd><MudButton Size="Size.Small" Href="@($"ai-runs/{context.Id}")">View</MudButton></MudTd>
+        <MudTd>
+            <MudButton Size="Size.Small" Href="@($"ai-runs/{context.Id}")">View</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Warning" OnClick="() => ClearOutput(context.Id)">Delete output</MudButton>
+        </MudTd>
     </RowTemplate>
 </MudTable>
 
 @code {
     private List<AiRecommendationRun> _runs = [];
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         _runs = (await db.AiRecommendationRuns.ToListAsync()).OrderByDescending(x => x.StartedAt).Take(50).ToList();
     }
+
+    private async Task ClearOutput(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var run = await db.AiRecommendationRuns.FindAsync(id);
+        if (run is null) return;
+        run.OutputJson = "{}";
+        await db.SaveChangesAsync();
+        Snackbar.Add($"Deleted stored output for AI run #{id}.", Severity.Success);
+        await Load();
+    }
+
+    private async Task ClearAllOutputs()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var runs = await db.AiRecommendationRuns.ToListAsync();
+        foreach (var run in runs)
+        {
+            run.OutputJson = "{}";
+        }
+
+        await db.SaveChangesAsync();
+        Snackbar.Add($"Deleted stored outputs for {runs.Count} AI runs.", Severity.Success);
+        await Load();
+    }
+
     private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;
 }

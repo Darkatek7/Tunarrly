@@ -9,7 +9,7 @@ using Tunarrly.Infrastructure.Data;
 
 namespace Tunarrly.Infrastructure.AI;
 
-public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService settings, IDbContextFactory<TunarrlyDbContext> dbFactory) : IAiProviderClient
+public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService settings, IDbContextFactory<TunarrlyDbContext> dbFactory, IAiContextService contextService) : IAiProviderClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -38,11 +38,11 @@ public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService 
         var options = await settings.GetAiOptionsAsync(cancellationToken);
         if (!options.Enabled || !ConfigureClient(options, out _)) return Array.Empty<RecommendationCandidate>();
 
-        var context = await BuildContextAsync(options.MaxInputArtists, cancellationToken);
+        var context = await contextService.BuildPreviewAsync(options.MaxInputArtists, cancellationToken);
         var messages = new[]
         {
             new ChatMessage("system", "You are a music discovery assistant for a self-hosted Lidarr companion app. Recommend artists the user may want to add to Lidarr. Use only the provided music profile. Avoid artists already monitored in Lidarr. Avoid ignored artists. Prefer explainable recommendations based on genres, collaborations, featured artists, and library patterns. Return strict JSON only."),
-            new ChatMessage("user", JsonSerializer.Serialize(context, JsonOptions))
+            new ChatMessage("user", context.PayloadJson)
         };
         var payload = new ChatCompletionRequest(options.Model, messages, options.Temperature, new { type = "json_object" });
         using var response = await httpClient.PostAsJsonAsync("chat/completions", payload, JsonOptions, cancellationToken);
@@ -71,18 +71,6 @@ public sealed class AiProviderClient(HttpClient httpClient, IAppSettingsService 
         httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(5, options.TimeoutSeconds));
         httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrWhiteSpace(options.ApiKey) ? null : new AuthenticationHeaderValue("Bearer", options.ApiKey);
         return true;
-    }
-
-    private async Task<object> BuildContextAsync(int maxArtists, CancellationToken cancellationToken)
-    {
-        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-        var lidarr = await db.LidarrArtists.OrderBy(x => x.Name).Take(maxArtists).Select(x => x.Name).ToListAsync(cancellationToken);
-        var ignored = await db.Recommendations.Where(x => x.Status == RecommendationStatuses.Ignored).Select(x => x.ArtistName).ToListAsync(cancellationToken);
-        var local = await db.Recommendations.Where(x => x.Source != RecommendationSources.Ai).OrderByDescending(x => x.Score).Take(50).Select(x => new { x.ArtistName, x.Score, x.ReasonJson }).ToListAsync(cancellationToken);
-        var topArtists = await db.TrackArtistCredits.GroupBy(x => x.ArtistName).OrderByDescending(x => x.Count()).Take(maxArtists).Select(x => new { Name = x.Key, Count = x.Count() }).ToListAsync(cancellationToken);
-        var genres = await db.LibraryTracks.Where(x => x.Genre != null).GroupBy(x => x.Genre!).OrderByDescending(x => x.Count()).Take(50).Select(x => new { Name = x.Key, Count = x.Count() }).ToListAsync(cancellationToken);
-        var featured = await db.TrackArtistCredits.Where(x => x.CreditType == CreditTypes.Featured).GroupBy(x => x.ArtistName).OrderByDescending(x => x.Count()).Take(100).Select(x => new { Name = x.Key, Count = x.Count() }).ToListAsync(cancellationToken);
-        return new { monitoredLidarrArtists = lidarr, ignoredArtists = ignored, topLibraryArtists = topArtists, frequentGenres = genres, featuredArtists = featured, localRecommendations = local };
     }
 
     private sealed record ChatCompletionRequest(string Model, IReadOnlyList<ChatMessage> Messages, double Temperature, object? ResponseFormat = null);

@@ -64,4 +64,10 @@ public sealed record RecommendationEvidence(
     int Weight,
     IReadOnlyDictionary<string, string> Data);
 
+public sealed record AiContextPreview(
+    string PayloadJson,
+    int ApproximateBytes,
+    IReadOnlyList<string> Included,
+    IReadOnlyList<string> Excluded);
+
 public sealed record ScanRequest(string LibraryPath);

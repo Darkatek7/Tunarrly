@@ -1,5 +1,6 @@
 @page "/ai-runs/{Id:int}"
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
+@inject ISnackbar Snackbar
 
 <PageTitle>AI Run Detail</PageTitle>
 
@@ -46,6 +47,7 @@ else
             <MudItem xs="12">
                 <MudCard Class="pa-4" Elevation="0">
                     <MudText Typo="Typo.h5">Output Summary</MudText>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" Class="my-2" OnClick="ClearOutput">Delete stored output</MudButton>
                     <pre>@Pretty(_run.OutputJson)</pre>
                 </MudCard>
             </MudItem>
@@ -74,6 +76,18 @@ else
         {
             return json;
         }
+    }
+
+    private async Task ClearOutput()
+    {
+        if (_run is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var run = await db.AiRecommendationRuns.FindAsync(Id);
+        if (run is null) return;
+        run.OutputJson = "{}";
+        await db.SaveChangesAsync();
+        _run.OutputJson = "{}";
+        Snackbar.Add("Stored AI output deleted.", Severity.Success);
     }
 
     private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;

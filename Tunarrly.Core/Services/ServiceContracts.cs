@@ -31,6 +31,11 @@ public interface IAiProviderClient
     Task<IReadOnlyList<RecommendationCandidate>> GetRecommendationsAsync(CancellationToken cancellationToken = default);
 }
 
+public interface IAiContextService
+{
+    Task<AiContextPreview> BuildPreviewAsync(int maxArtists, CancellationToken cancellationToken = default);
+}
+
 public interface ILidarrSyncService
 {
     Task<OperationResult> SyncArtistsAsync(CancellationToken cancellationToken = default);
