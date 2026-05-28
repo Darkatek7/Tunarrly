@@ -4,11 +4,14 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>Lidarr Connection</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">Lidarr Connection</MudText>
-<MudStack Row="true" Spacing="2" Class="mb-4">
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Test">Test Lidarr connection</MudButton>
-    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SyncArtists">Sync Lidarr artists</MudButton>
-</MudStack>
+<MudCard Class="hero-card pa-5 mb-4" Elevation="0">
+    <MudText Typo="Typo.h3" Class="fw-800">Lidarr Connection</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary">Verify API access and import monitored artists before generating recommendations.</MudText>
+    <MudStack Row="true" Spacing="2" Class="mt-4" Style="flex-wrap: wrap;">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Test">Test Lidarr connection</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SyncArtists">Sync Lidarr artists</MudButton>
+    </MudStack>
+</MudCard>
 @if (_message is not null)
 {
     <MudAlert Severity="@(_success ? Severity.Success : Severity.Error)">@_message</MudAlert>

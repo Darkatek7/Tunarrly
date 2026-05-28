@@ -8,12 +8,18 @@
         <MudTable Items="_lidarr" Hover="true" Elevation="0">
             <HeaderContent><MudTh>Name</MudTh><MudTh>Monitored</MudTh><MudTh>Path</MudTh></HeaderContent>
             <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Monitored</MudTd><MudTd>@context.Path</MudTd></RowTemplate>
+            <NoRecordsContent>
+                <MudAlert Severity="Severity.Info">No Lidarr artists synced yet. Use the Lidarr Connection page to sync monitored artists.</MudAlert>
+            </NoRecordsContent>
         </MudTable>
     </MudTabPanel>
     <MudTabPanel Text="Library">
         <MudTable Items="_library" Hover="true" Elevation="0">
             <HeaderContent><MudTh>Name</MudTh><MudTh>Source</MudTh></HeaderContent>
             <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Source</MudTd></RowTemplate>
+            <NoRecordsContent>
+                <MudAlert Severity="Severity.Info">No library artists indexed yet. Scan your read-only music library first.</MudAlert>
+            </NoRecordsContent>
         </MudTable>
     </MudTabPanel>
 </MudTabs>
