@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using Tunarrly.Core.Models;
 using Tunarrly.Core.Normalization;
 using Tunarrly.Core.Services;
@@ -10,6 +11,7 @@ namespace Tunarrly.Infrastructure.Scanning;
 public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFactory<TunarrlyDbContext> dbFactory, ILogger<LibraryScanner> logger) : ILibraryScanner
 {
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase) { ".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wav", ".aac" };
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<OperationResult> ScanAsync(string? libraryPath = null, CancellationToken cancellationToken = default)
     {
@@ -27,22 +29,31 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
         var job = new ScanJob { Status = JobStatuses.Running, LibraryPath = path, FilesDiscovered = files.Length, StartedAt = DateTimeOffset.UtcNow };
         db.ScanJobs.Add(job);
         await db.SaveChangesAsync(cancellationToken);
+        var failedFiles = new List<string>();
 
         foreach (var file in files)
         {
-            job.CurrentFile = file;
+            job.CurrentFile = Path.GetFileName(file);
             try
             {
-                await IndexFileAsync(db, file, cancellationToken);
-                job.FilesScanned++;
+                if (await IndexFileAsync(db, file, cancellationToken))
+                {
+                    job.FilesScanned++;
+                }
+                else
+                {
+                    job.FilesSkipped++;
+                }
             }
             catch (Exception ex)
             {
                 job.FilesFailed++;
+                failedFiles.Add(Path.GetFileName(file));
+                job.FailureSummaryJson = JsonSerializer.Serialize(failedFiles.Distinct().Take(10), JsonOptions);
                 logger.LogWarning(ex, "Failed to index audio file {FileName}", Path.GetFileName(file));
             }
 
-            if ((job.FilesScanned + job.FilesFailed) % 25 == 0)
+            if ((job.FilesScanned + job.FilesSkipped + job.FilesFailed) % 25 == 0)
             {
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -52,18 +63,19 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
 
         job.Status = JobStatuses.Completed;
         job.CurrentFile = null;
+        job.ErrorMessage = job.FilesFailed == 0 ? null : $"{job.FilesFailed} files failed. Stored failed-file summary contains file names only.";
         job.FinishedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
-        return OperationResult.Ok($"Scanned {job.FilesScanned} files. Failed: {job.FilesFailed}.");
+        return OperationResult.Ok($"Indexed {job.FilesScanned} files. Skipped unchanged: {job.FilesSkipped}. Failed: {job.FilesFailed}.");
     }
 
-    private static async Task IndexFileAsync(TunarrlyDbContext db, string file, CancellationToken cancellationToken)
+    private static async Task<bool> IndexFileAsync(TunarrlyDbContext db, string file, CancellationToken cancellationToken)
     {
         var info = new FileInfo(file);
         var existingTrack = await db.LibraryTracks.SingleOrDefaultAsync(x => x.Path == file, cancellationToken);
         if (existingTrack is not null && existingTrack.FileSizeBytes == info.Length && existingTrack.FileModifiedAt == info.LastWriteTimeUtc)
         {
-            return;
+            return false;
         }
 
         using var tagFile = TagLib.File.Create(file);
@@ -111,6 +123,8 @@ public sealed class LibraryScanner(IAppSettingsService settings, IDbContextFacto
             await UpsertArtistAsync(db, collaborator, cancellationToken);
             AddCredit(db, track.Id, collaborator, CreditTypes.Featured);
         }
+
+        return true;
     }
 
     private static async Task<LibraryArtist> UpsertArtistAsync(TunarrlyDbContext db, string name, CancellationToken cancellationToken)

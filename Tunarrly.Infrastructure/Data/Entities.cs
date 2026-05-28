@@ -131,7 +131,9 @@ public sealed class ScanJob
     public string? CurrentFile { get; set; }
     public int FilesDiscovered { get; set; }
     public int FilesScanned { get; set; }
+    public int FilesSkipped { get; set; }
     public int FilesFailed { get; set; }
+    public string FailureSummaryJson { get; set; } = "[]";
     public string? ErrorMessage { get; set; }
     public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? FinishedAt { get; set; }

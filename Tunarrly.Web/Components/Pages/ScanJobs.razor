@@ -4,15 +4,28 @@
 
 <PageTitle>Scan Jobs</PageTitle>
 <MudText Typo="Typo.h3" Class="fw-800 mb-4">Scan Jobs</MudText>
+<MudAlert Severity="Severity.Info" Class="mb-4">Scan progress hides local file paths. Current and failed files are shown by filename only.</MudAlert>
 <MudTable Items="_jobs" Hover="true" Elevation="0">
     <HeaderContent>
-        <MudTh>Status</MudTh><MudTh>Path</MudTh><MudTh>Scanned</MudTh><MudTh>Failed</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh>
+        <MudTh>Status</MudTh><MudTh>Library</MudTh><MudTh>Progress</MudTh><MudTh>Indexed</MudTh><MudTh>Skipped</MudTh><MudTh>Failed</MudTh><MudTh>Current</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd><MudChip T="string" Color="@StatusColor(context.Status)">@context.Status</MudChip></MudTd>
-        <MudTd>@context.LibraryPath</MudTd>
-        <MudTd>@context.FilesScanned / @context.FilesDiscovered</MudTd>
-        <MudTd>@context.FilesFailed</MudTd>
+        <MudTd>Configured library</MudTd>
+        <MudTd>
+            <MudProgressLinear Value="@Progress(context)" Color="Color.Primary" />
+            <MudText Typo="Typo.caption">@Processed(context) / @context.FilesDiscovered files processed</MudText>
+        </MudTd>
+        <MudTd>@context.FilesScanned</MudTd>
+        <MudTd>@context.FilesSkipped</MudTd>
+        <MudTd>
+            @context.FilesFailed
+            @foreach (var file in FailedFiles(context))
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ma-1">@file</MudChip>
+            }
+        </MudTd>
+        <MudTd>@(context.CurrentFile ?? "-")</MudTd>
         <MudTd>@context.StartedAt.LocalDateTime</MudTd>
         <MudTd>@context.FinishedAt?.LocalDateTime</MudTd>
     </RowTemplate>
@@ -51,4 +64,20 @@
     }
 
     private static Color StatusColor(string status) => status == JobStatuses.Completed ? Color.Success : status == JobStatuses.Failed ? Color.Error : Color.Info;
+
+    private static int Processed(ScanJob job) => job.FilesScanned + job.FilesSkipped + job.FilesFailed;
+
+    private static double Progress(ScanJob job) => job.FilesDiscovered == 0 ? 0 : Math.Clamp(Processed(job) * 100d / job.FilesDiscovered, 0, 100);
+
+    private static IReadOnlyList<string> FailedFiles(ScanJob job)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<IReadOnlyList<string>>(job.FailureSummaryJson) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
 }

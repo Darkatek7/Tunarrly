@@ -379,6 +379,10 @@ namespace Tunarrly.Infrastructure.Data.Migrations
                     b.Property<string>("ErrorMessage")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FailureSummaryJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("FilesDiscovered")
                         .HasColumnType("INTEGER");
 
@@ -386,6 +390,9 @@ namespace Tunarrly.Infrastructure.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("FilesScanned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FilesSkipped")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("FinishedAt")
