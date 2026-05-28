@@ -10,7 +10,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h6" Class="fw-800">Tunarrly</MudText>
         <MudSpacer />
-        <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined">AI optional</MudChip>
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">Local-first discovery</MudChip>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="tunarrly-drawer">
         <MudDrawerHeader>
@@ -41,14 +41,18 @@
     {
         PaletteDark = new PaletteDark
         {
-            Black = "#05070d",
-            Background = "#080b13",
-            Surface = "#121826",
-            DrawerBackground = "#0d1320",
-            AppbarBackground = "#0b1020",
-            Primary = "#8b5cf6",
-            Secondary = "#22d3ee",
-            Tertiary = "#f59e0b"
+            Black = "#050608",
+            Background = "#0b0d10",
+            Surface = "#151922",
+            DrawerBackground = "#10141b",
+            AppbarBackground = "#0d1117",
+            Primary = "#d6a84f",
+            Secondary = "#8fa38b",
+            Tertiary = "#b8734d",
+            Info = "#7f8fa6",
+            Success = "#8fa38b",
+            Warning = "#d6a84f",
+            Error = "#c45f56"
         },
         Typography = new Typography { Default = new DefaultTypography { FontFamily = ["Inter", "sans-serif"] } }
     };

@@ -34,6 +34,8 @@ done
 
 curl -fsS "http://127.0.0.1:$host_port/health" >/dev/null
 curl -fsS "http://127.0.0.1:$host_port/ready" >/dev/null
+curl -fsS "http://127.0.0.1:$host_port/_framework/blazor.web.js" >/dev/null
+curl -fsS "http://127.0.0.1:$host_port/_content/MudBlazor/MudBlazor.min.js" >/dev/null
 
 if docker exec "$container" sh -c 'touch /music/should-not-write' >/dev/null 2>&1; then
   echo "ERROR: container was able to write to /music" >&2

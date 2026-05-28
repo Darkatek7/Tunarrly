@@ -9,7 +9,7 @@ COPY Tunarrly.Tests/Tunarrly.Tests.csproj Tunarrly.Tests/
 RUN dotnet restore Tunarrly.slnx
 
 COPY . .
-RUN dotnet publish Tunarrly.Web/Tunarrly.Web.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish Tunarrly.Web/Tunarrly.Web.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
