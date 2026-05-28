@@ -19,7 +19,7 @@ This project is early MVP software. Run it on a trusted LAN or behind an authent
 
 ## Screenshots
 
-Screenshots will be added as the UI stabilizes.
+Screenshots will be added after a tagged release. Current UI areas include Dashboard onboarding, Settings, Lidarr Connection, Library, Scan Jobs, Recommendations, Recommendation Detail, AI Provider, and AI Runs.
 
 ## First Run
 
@@ -79,6 +79,8 @@ services:
   tunarrly:
     build: .
 ```
+
+Published tags include `latest`, `main`, tag names such as `v1.0.0`, and `sha-<commit>` tags.
 
 ## Required Lidarr Settings
 
@@ -145,6 +147,8 @@ AI__MAXRECOMMENDATIONS=25
 
 Tunarrly does not send local file paths or secrets to AI providers.
 
+The AI Provider page can preview the exact sanitized payload before an AI recommendation run. Stored AI run outputs can be deleted from the AI Runs page.
+
 ## Development
 
 ```bash
@@ -153,6 +157,16 @@ dotnet test
 dotnet build
 dotnet run --project Tunarrly.Web
 ```
+
+Browser interaction tests use Playwright:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:browser
+```
+
+The browser tests start an isolated local app instance, verify Blazor/MudBlazor assets, and exercise dashboard and settings interactions.
 
 The default database path is `data/tunarrly.db` locally and `/app/data/tunarrly.db` in Docker.
 
@@ -174,6 +188,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - AI is optional and disabled by default.
 - Tunarrly does not send local file paths, API keys, tokens, or raw filesystem structure to AI providers.
 - The music library should be mounted read-only with `:ro`.
+- Scan progress and failed-file summaries show filenames only, not full local paths.
 
 ## Recommendation Sources
 
@@ -198,6 +213,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - If Lidarr testing fails, verify `LIDARR__BASEURL` is reachable from the Tunarrly container and the API key is correct.
 - If AI testing fails with a local provider, verify the provider exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
 - If scans find no tracks, verify the music volume is mounted to the same path configured in `LIBRARY__PATH`.
+- If browser tests fail because port `5107` is busy, stop the process using that port and rerun `npm run test:browser`.
 
 ## Roadmap
 
@@ -205,7 +221,7 @@ The Docker image includes a minimal runtime healthcheck. Use `/ready` from your 
 - Background queue and cancellation for long-running scans.
 - More robust MusicBrainz/Lidarr matching.
 - Authentication option for exposed deployments.
-- More tests and sample datasets.
+- More sample datasets and screenshots.
 - Screenshots and release packaging after real-world testing.
 
 ## License
