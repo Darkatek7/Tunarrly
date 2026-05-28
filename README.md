@@ -19,7 +19,17 @@ This project is early MVP software. Run it on a trusted LAN or behind an authent
 
 ## Screenshots
 
-Screenshots will be added after a tagged release. Current UI areas include Dashboard onboarding, Settings, Lidarr Connection, Library, Scan Jobs, Recommendations, Recommendation Detail, AI Provider, and AI Runs.
+Live screenshots from the current MVP:
+
+![Login](docs/screenshots/login.png)
+![Dashboard](docs/screenshots/dashboard.png)
+![Settings](docs/screenshots/settings.png)
+![Lidarr Connection](docs/screenshots/lidarr-connection.png)
+![Library](docs/screenshots/library.png)
+![Scan Jobs](docs/screenshots/scan-jobs.png)
+![Recommendations](docs/screenshots/recommendations.png)
+![AI Provider Privacy Preview](docs/screenshots/ai-provider-privacy-preview.png)
+![AI Runs](docs/screenshots/ai-runs.png)
 
 ## First Run
 
