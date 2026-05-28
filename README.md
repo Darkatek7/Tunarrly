@@ -79,7 +79,7 @@ To find your Lidarr API key, open Lidarr and go to `Settings -> General -> Secur
 
 If Tunarrly runs in Docker Compose with Lidarr on the same Docker network, `http://lidarr:8686` may work. If Lidarr runs on the host, use an address reachable from inside the Tunarrly container.
 
-The Lidarr integration is covered by compatibility tests for expected API shapes. Final live verification still depends on your own Lidarr version and configuration.
+The Lidarr integration is covered by compatibility tests for expected API shapes. It has also been smoke-tested against a live Lidarr 3.1.0 instance for status, artists, profiles, root folders, lookup, and add-artist with album search disabled. Behavior can still vary by Lidarr version and configuration.
 
 ## Optional AI Provider
 
