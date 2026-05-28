@@ -8,6 +8,7 @@ public sealed record OperationResult(bool Success, string Message)
 
 public sealed record DashboardStats(
     bool LidarrConfigured,
+    bool LidarrDefaultsConfigured,
     bool AiEnabled,
     int LidarrArtists,
     int LibraryArtists,
@@ -16,7 +17,12 @@ public sealed record DashboardStats(
     int AiRecommendations,
     DateTimeOffset? LastScanAt,
     DateTimeOffset? LastLidarrSyncAt,
-    DateTimeOffset? LastAiRunAt);
+    DateTimeOffset? LastAiRunAt,
+    DateTimeOffset? LastRecommendationAt,
+    string? LastScanStatus,
+    int LastScanFilesScanned,
+    int LastScanFilesFailed,
+    string? LastAiRunStatus);
 
 public sealed record LidarrArtistDto(
     int Id,

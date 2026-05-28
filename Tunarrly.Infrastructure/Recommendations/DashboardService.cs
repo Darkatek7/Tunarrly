@@ -14,16 +14,26 @@ public sealed class DashboardService(IDbContextFactory<TunarrlyDbContext> dbFact
         var ai = await settings.GetAiOptionsAsync(cancellationToken);
         var scanJobs = await db.ScanJobs.ToListAsync(cancellationToken);
         var aiRuns = await db.AiRecommendationRuns.ToListAsync(cancellationToken);
+        var lastScan = scanJobs.OrderByDescending(x => x.StartedAt).FirstOrDefault();
+        var lastAiRun = aiRuns.OrderByDescending(x => x.StartedAt).FirstOrDefault();
         return new DashboardStats(
             !string.IsNullOrWhiteSpace(lidarr.BaseUrl) && !string.IsNullOrWhiteSpace(lidarr.ApiKey),
+            !string.IsNullOrWhiteSpace(lidarr.DefaultRootFolder)
+                && lidarr.DefaultQualityProfileId > 0
+                && lidarr.DefaultMetadataProfileId > 0,
             ai.Enabled,
             await db.LidarrArtists.CountAsync(cancellationToken),
             await db.LibraryArtists.CountAsync(cancellationToken),
             await db.LibraryTracks.CountAsync(cancellationToken),
             await db.Recommendations.CountAsync(x => x.Status == RecommendationStatuses.New, cancellationToken),
             await db.Recommendations.CountAsync(x => x.Source == RecommendationSources.Ai || x.Source == RecommendationSources.Hybrid, cancellationToken),
-            scanJobs.OrderByDescending(x => x.StartedAt).Select(x => x.FinishedAt ?? x.StartedAt).FirstOrDefault(),
+            lastScan?.FinishedAt ?? lastScan?.StartedAt,
             (await db.LidarrArtists.ToListAsync(cancellationToken)).OrderByDescending(x => x.LastSyncedAt).Select(x => (DateTimeOffset?)x.LastSyncedAt).FirstOrDefault(),
-            aiRuns.OrderByDescending(x => x.StartedAt).Select(x => (DateTimeOffset?)x.StartedAt).FirstOrDefault());
+            lastAiRun?.StartedAt,
+            await db.Recommendations.MaxAsync(x => (DateTimeOffset?)x.LastCalculatedAt, cancellationToken),
+            lastScan?.Status,
+            lastScan?.FilesScanned ?? 0,
+            lastScan?.FilesFailed ?? 0,
+            lastAiRun?.Status);
     }
 }

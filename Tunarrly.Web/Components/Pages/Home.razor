@@ -35,6 +35,48 @@
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Last Lidarr Sync" Value="@When(_stats.LastLidarrSyncAt)" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Last AI Run" Value="@When(_stats.LastAiRunAt)" /></MudItem>
         </MudGrid>
+
+        <MudGrid>
+            <MudItem xs="12" md="7">
+                <MudCard Class="stat-card pa-4" Elevation="0">
+                    <MudText Typo="Typo.h5" Class="fw-800">First-run checklist</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Complete these steps once to get from an empty install to explainable recommendations.</MudText>
+                    <MudStack Spacing="2">
+                        @ChecklistStep("Configure Lidarr", _stats.LidarrConfigured, "Save your Lidarr URL and API key in Settings.", "settings")
+                        @ChecklistStep("Choose Lidarr add defaults", _stats.LidarrDefaultsConfigured, "Load root folders and quality/metadata profiles before adding artists.", "settings")
+                        @ChecklistStep("Sync Lidarr artists", _stats.LidarrArtists > 0, "Import monitored artists so Tunarrly avoids recommending what you already track.", "artists")
+                        @ChecklistStep("Scan the read-only library", _stats.LibraryTracks > 0, "Index local artists, albums, tracks, genres, and collaborator credits.", "library")
+                        @ChecklistStep("Generate local recommendations", _stats.NewRecommendations > 0 || _stats.LastRecommendationAt is not null, "Run local recommendations before enabling optional AI.", "recommendations")
+                    </MudStack>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="5">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudCard Class="stat-card pa-4" Elevation="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last scan result</MudText>
+                            <MudText Typo="Typo.h6" Class="fw-800">@(_stats.LastScanStatus ?? "Never run")</MudText>
+                            <MudText Typo="Typo.body2">@_stats.LastScanFilesScanned files scanned, @_stats.LastScanFilesFailed failed.</MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCard Class="stat-card pa-4" Elevation="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last recommendation refresh</MudText>
+                            <MudText Typo="Typo.h6" Class="fw-800">@When(_stats.LastRecommendationAt)</MudText>
+                            <MudText Typo="Typo.body2">@_stats.NewRecommendations new recommendations are waiting for review.</MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCard Class="stat-card pa-4" Elevation="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last AI result</MudText>
+                            <MudText Typo="Typo.h6" Class="fw-800">@(_stats.LastAiRunStatus ?? "Never run")</MudText>
+                            <MudText Typo="Typo.body2">AI remains optional; local recommendations work without it.</MudText>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
         <MudGrid>
             <MudItem xs="12" md="6">
                 <MudAlert Severity="@(_stats.LidarrConfigured ? Severity.Success : Severity.Warning)">
@@ -72,4 +114,15 @@
     private Task GenerateLocal() => Run(() => Recommendations.GenerateLocalAsync());
     private Task GenerateAi() => Run(() => Recommendations.GenerateAiAsync());
     private static string When(DateTimeOffset? value) => value?.LocalDateTime.ToString("g") ?? "Never";
+
+    private RenderFragment ChecklistStep(string title, bool complete, string description, string href) => @<MudPaper Class="pa-3 onboarding-step" Outlined="true">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@(complete ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="@(complete ? Color.Success : Color.Warning)" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.subtitle1" Class="fw-800">@title</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@description</MudText>
+            </div>
+            <MudButton Href="@href" Variant="Variant.Text" Color="@(complete ? Color.Success : Color.Primary)">@(complete ? "Review" : "Open")</MudButton>
+        </MudStack>
+    </MudPaper>;
 }

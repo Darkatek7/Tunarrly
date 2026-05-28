@@ -42,6 +42,11 @@ a {
     border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
+.onboarding-step {
+    background: rgba(15, 18, 25, 0.62);
+    border-color: rgba(214, 168, 79, 0.16) !important;
+}
+
 pre {
     white-space: pre-wrap;
     word-break: break-word;
