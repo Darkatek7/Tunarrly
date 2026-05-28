@@ -25,23 +25,26 @@ Screenshots will be added as the UI stabilizes.
 
 1. Copy `.env.example` to `.env`.
 2. Edit `LIDARR__BASEURL` and `LIDARR__APIKEY`.
-3. Change the music mount in `docker-compose.yml` from `/path/to/music:/music:ro` to your library path.
-4. Start Tunarrly with `docker compose up --build`.
-5. Open `http://localhost:8080`.
-6. Go to Settings and test Lidarr.
-7. Load root folders and profiles from Lidarr.
-8. Sync Lidarr artists.
-9. Scan your library.
-10. Generate local recommendations.
-11. Enable AI only if you want optional second-stage AI recommendations.
+3. Copy `docker-compose.example.yml` to `docker-compose.yml`.
+4. Change the music mount in your local `docker-compose.yml` from `/path/to/music:/music:ro` to your library path.
+5. Start Tunarrly with `docker compose up -d`.
+6. Open `http://localhost:8080`.
+7. Go to Settings and test Lidarr.
+8. Load root folders and profiles from Lidarr.
+9. Sync Lidarr artists.
+10. Scan your library.
+11. Generate local recommendations.
+12. Enable AI only if you want optional second-stage AI recommendations.
 
 ## Docker Compose
 
-Copy `.env.example` to `.env`, edit values, then run:
+Copy `.env.example` to `.env`, copy `docker-compose.example.yml` to `docker-compose.yml`, edit local values, then run:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
+
+`docker-compose.yml` is intentionally ignored by Git so your local paths, ports, and networking choices are not overwritten by future pulls.
 
 To run a local Docker smoke test without a real library, use:
 
@@ -51,7 +54,7 @@ bash scripts/docker-smoke.sh
 
 The smoke test builds the image, starts the app, checks `/health` and `/ready`, verifies `/app/data` is writable, and verifies `/music` is read-only.
 
-Default compose service:
+Default example compose service:
 
 ```yaml
 volumes:
@@ -69,12 +72,12 @@ The public image is published to GitHub Container Registry:
 docker pull ghcr.io/darkatek7/tunarrly:latest
 ```
 
-You can use the image instead of building locally by changing Compose to:
+The example Compose file uses this image by default. For local development builds, replace the `image:` line with:
 
 ```yaml
 services:
   tunarrly:
-    image: ghcr.io/darkatek7/tunarrly:latest
+    build: .
 ```
 
 ## Required Lidarr Settings

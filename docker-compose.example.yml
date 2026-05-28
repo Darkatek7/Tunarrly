@@ -1,6 +1,8 @@
 services:
   tunarrly:
-    build: .
+    image: ghcr.io/darkatek7/tunarrly:latest
+    # For local development builds, replace the image line with:
+    # build: .
     container_name: tunarrly
     ports:
       - "8080:8080"

@@ -24,7 +24,11 @@ data/
 
 # Docker/local artifacts
 .docker/
+docker-compose.yml
 docker-compose.override.yml
+node_modules/
+playwright-report/
+test-results/
 
 # OS files
 .DS_Store
