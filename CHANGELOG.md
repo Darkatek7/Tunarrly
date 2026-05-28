@@ -2,6 +2,18 @@
 
 All notable changes to Tunarrly will be documented in this file.
 
+## v0.1.2 - 2026-05-28
+
+### Changed
+
+- Redesigned the app shell, dashboard, login, settings, Lidarr, AI provider, library, scan jobs, artists, recommendations, AI runs, detail, error, and 404 pages with a darker media-console visual identity.
+- Added shared page hero, panel, table, detail, notice, and empty-state styling for a more cohesive UI.
+
+### Fixed
+
+- Fixed authenticated deployments blocking fingerprinted static assets such as `app.*.css` before login.
+- Added browser regression coverage to ensure the login shell receives the intended styled layout.
+
 ## v0.1.1 - 2026-05-28
 
 ### Fixed

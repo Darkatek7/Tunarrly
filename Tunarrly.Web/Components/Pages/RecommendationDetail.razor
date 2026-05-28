@@ -8,13 +8,26 @@
 <PageTitle>Recommendation Detail</PageTitle>
 @if (_recommendation is null)
 {
-    <MudAlert Severity="Severity.Warning">Recommendation not found.</MudAlert>
+    <div class="page-stack">
+        <section class="page-hero detail-hero">
+            <div>
+                <div class="eyebrow">Missing record</div>
+                <MudText Typo="Typo.h3" Class="fw-800 page-title">Recommendation not found</MudText>
+                <MudText Typo="Typo.body1" Class="page-subtitle">This recommendation may have been deleted or the link may be stale.</MudText>
+            </div>
+            <div class="page-actions"><MudButton Href="/recommendations" Variant="Variant.Filled" Color="Color.Primary">Back to Recommendations</MudButton></div>
+        </section>
+    </div>
 }
 else
 {
-    <MudStack Spacing="4">
-        <MudCard Class="pa-5" Elevation="0">
-            <MudText Typo="Typo.h3" Class="fw-800">@_recommendation.ArtistName</MudText>
+    <MudStack Spacing="4" Class="page-stack">
+        <section class="page-hero detail-hero">
+            <div>
+                <div class="eyebrow">Recommendation detail</div>
+                <MudText Typo="Typo.h3" Class="fw-800 page-title">@_recommendation.ArtistName</MudText>
+                <MudText Typo="Typo.body1" Class="page-subtitle">Review the evidence, indexed context, and explicit Lidarr add payload before taking action.</MudText>
+            </div>
             <MudStack Row="true" Spacing="1" Class="mt-2">
                 <MudChip T="string" Color="Color.Primary">Score @_recommendation.Score</MudChip>
                 @if (_recommendation.Confidence is not null)
@@ -24,10 +37,10 @@ else
                 <MudChip T="string" Color="Color.Secondary">@_recommendation.Source</MudChip>
                 <MudChip T="string" Variant="Variant.Outlined" Color="@StatusColor(_recommendation.Status)">@_recommendation.Status</MudChip>
             </MudStack>
-        </MudCard>
+        </section>
         <MudGrid>
             <MudItem xs="12" md="8">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="detail-panel" Elevation="0">
                     <MudText Typo="Typo.h5" Class="fw-800">Why this artist surfaced</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">@ScoreNarrative(_recommendation)</MudText>
                     <MudList T="string">
@@ -89,7 +102,7 @@ else
                     }
                 </MudCard>
 
-                <MudCard Class="pa-4 mt-4" Elevation="0">
+                <MudCard Class="detail-panel mt-4" Elevation="0">
                     <MudText Typo="Typo.h5" Class="fw-800">Indexed tracks and albums</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Only tag-derived titles, artists, genres, and years are shown. Local file paths stay hidden.</MudText>
                     @if (_relatedTracks.Count == 0)
@@ -120,7 +133,7 @@ else
                 </MudCard>
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="detail-panel" Elevation="0">
                     <MudText Typo="Typo.h5">Add to Lidarr</MudText>
                     <MudAlert Severity="Severity.Info" Class="my-3">Search Lidarr, select the correct match, then confirm. Tunarrly never auto-adds artists.</MudAlert>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Search">Search Lidarr</MudButton>

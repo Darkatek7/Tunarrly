@@ -3,10 +3,18 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>AI Runs</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Runs</MudText>
-<MudStack Row="true" Class="mb-4">
-    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearAllOutputs" Disabled="_runs.Count == 0">Delete stored AI outputs</MudButton>
-</MudStack>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">AI audit trail</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">AI Runs</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Inspect provider runs, status, sanitized inputs, and stored outputs.</MudText>
+    </div>
+    <div class="page-actions">
+        <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearAllOutputs" Disabled="_runs.Count == 0">Delete stored AI outputs</MudButton>
+    </div>
+</section>
+<div class="table-panel">
 <MudTable Items="_runs" Hover="true" Elevation="0">
     <HeaderContent><MudTh>Status</MudTh><MudTh>Provider</MudTh><MudTh>Model</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Error</MudTh><MudTh>Actions</MudTh></HeaderContent>
     <RowTemplate>
@@ -22,6 +30,8 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
+</div>
+</div>
 
 @code {
     private List<AiRecommendationRun> _runs = [];

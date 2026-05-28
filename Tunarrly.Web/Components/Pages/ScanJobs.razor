@@ -5,8 +5,16 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>Scan Jobs</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">Scan Jobs</MudText>
-<MudAlert Severity="Severity.Info" Class="mb-4">Scan progress hides local file paths. Current and failed files are shown by filename only.</MudAlert>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Scanner queue</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">Scan Jobs</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Track read-only library scans, cancellation status, and filename-only progress.</MudText>
+    </div>
+</section>
+<div class="notice-panel"><MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" /> <span>Scan progress hides local file paths. Current and failed files are shown by filename only.</span></div>
+<div class="table-panel">
 <MudTable Items="_jobs" Hover="true" Elevation="0">
     <HeaderContent>
         <MudTh>Status</MudTh><MudTh>Library</MudTh><MudTh>Progress</MudTh><MudTh>Indexed</MudTh><MudTh>Skipped</MudTh><MudTh>Failed</MudTh><MudTh>Current</MudTh><MudTh>Started</MudTh><MudTh>Finished</MudTh><MudTh>Actions</MudTh>
@@ -35,6 +43,8 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
+</div>
+</div>
 
 @code {
     private List<ScanJob> _jobs = [];

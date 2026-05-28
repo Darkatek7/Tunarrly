@@ -5,22 +5,30 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>AI Provider</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">AI Provider</MudText>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Optional enrichment</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">AI Provider</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Configure an OpenAI-compatible provider, preview sanitized payloads, and keep AI disabled unless you explicitly want it.</MudText>
+    </div>
+</section>
 @if (_options is null)
 {
     <MudProgressLinear Indeterminate="true" />
 }
 else
 {
-    <MudAlert Severity="Severity.Warning" Class="mb-4">
-        AI is optional and disabled by default. When enabled, Tunarrly sends a compact music profile to your configured AI provider, including artists, genres, local recommendations, ignored artists, and Lidarr artists to avoid. It must not send local file paths, API keys, tokens, or raw filesystem structure.
-    </MudAlert>
-    <MudAlert Severity="Severity.Info" Class="mb-4">
-        Saved provider tokens are masked in the UI but stored as plaintext in the local SQLite database. Use local providers without tokens where practical, or protect /app/data carefully.
-    </MudAlert>
-    <MudCard Class="pa-4 mb-4" Elevation="0">
-        <MudText Typo="Typo.h5" Class="fw-800">Provider presets</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Presets only fill endpoint and model defaults. Saved tokens are not changed.</MudText>
+    <div class="notice-panel warning"><MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" /> <span>AI is optional and disabled by default. When enabled, Tunarrly sends a compact music profile to your configured provider. It must not send local file paths, API keys, tokens, or raw filesystem structure.</span></div>
+    <div class="notice-panel"><MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" /> <span>Saved provider tokens are masked in the UI. Use local providers without tokens where practical, and configure secret encryption for saved tokens.</span></div>
+    <MudCard Class="content-panel" Elevation="0">
+        <div class="section-heading">
+            <div>
+                <div class="eyebrow">Provider presets</div>
+                <MudText Typo="Typo.h5" Class="fw-800 section-title">Fast setup</MudText>
+                <MudText Typo="Typo.body2" Class="panel-subtitle">Presets only fill endpoint and model defaults. Saved tokens are not changed.</MudText>
+            </div>
+        </div>
         <MudStack Row="true" Spacing="2" Style="flex-wrap: wrap;">
             @foreach (var preset in Presets)
             {
@@ -28,7 +36,13 @@ else
             }
         </MudStack>
     </MudCard>
-    <MudCard Class="pa-4" Elevation="0">
+    <MudCard Class="form-panel" Elevation="0">
+        <div class="section-heading">
+            <div>
+                <div class="eyebrow">Provider configuration</div>
+                <MudText Typo="Typo.h5" Class="fw-800 section-title">Connection settings</MudText>
+            </div>
+        </div>
         <MudGrid>
             <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_options.Enabled" Color="Color.Primary" /></MudItem>
             <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_options.BaseUrl" /></MudItem>
@@ -53,9 +67,9 @@ else
     {
         <MudGrid Class="mt-4">
             <MudItem xs="12" md="4">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="content-panel" Elevation="0">
                     <MudText Typo="Typo.h5" Class="fw-800">What is sent</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Approx. @_preview.ApproximateBytes bytes before provider transport overhead.</MudText>
+                    <MudText Typo="Typo.body2" Class="panel-subtitle">Approx. @_preview.ApproximateBytes bytes before provider transport overhead.</MudText>
                     <MudList T="string" Dense="true">
                         @foreach (var item in _preview.Included)
                         {
@@ -65,7 +79,7 @@ else
                 </MudCard>
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="content-panel" Elevation="0">
                     <MudText Typo="Typo.h5" Class="fw-800">What is not sent</MudText>
                     <MudList T="string" Dense="true">
                         @foreach (var item in _preview.Excluded)
@@ -79,7 +93,7 @@ else
                 <MudAlert Severity="Severity.Info">This preview is the same sanitized context used for AI recommendation requests. It does not include local paths or secrets.</MudAlert>
             </MudItem>
             <MudItem xs="12">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="content-panel code-panel" Elevation="0">
                     <MudText Typo="Typo.h5" Class="fw-800">Payload preview</MudText>
                     <pre>@_preview.PayloadJson</pre>
                 </MudCard>
@@ -87,6 +101,7 @@ else
         </MudGrid>
     }
 }
+</div>
 
 @code {
     private AiOptions? _options;

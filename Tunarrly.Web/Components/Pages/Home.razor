@@ -7,17 +7,20 @@
 
 <PageTitle>Tunarrly Dashboard</PageTitle>
 
-<MudStack Spacing="4">
-    <MudCard Class="hero-card pa-6" Elevation="0">
-        <MudText Typo="Typo.h2" Class="fw-800">AI-assisted music discovery for Lidarr</MudText>
-        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Powered by your own library, local evidence, and optional AI.</MudText>
-        <MudStack Row="true" Spacing="2" Class="mt-4" Style="flex-wrap: wrap;">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ScanLibrary" Disabled="_busy">Scan Library</MudButton>
+<MudStack Spacing="4" Class="dashboard-page">
+    <section class="command-header">
+        <div class="command-copy">
+            <div class="eyebrow">Music discovery console</div>
+            <MudText Typo="Typo.h3" Class="fw-800 dashboard-title">AI-assisted music discovery for Lidarr</MudText>
+            <MudText Typo="Typo.body1" Class="dashboard-subtitle">Keep Lidarr in sync, scan your read-only library, and turn local listening evidence into explainable artist recommendations.</MudText>
+        </div>
+        <div class="command-actions">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ScanLibrary" Disabled="_busy" Class="action-primary">Scan Library</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="SyncLidarr" Disabled="_busy">Sync Lidarr</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GenerateLocal" Disabled="_busy">Generate Local Recommendations</MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi" Disabled="_busy">Generate AI Recommendations</MudButton>
-        </MudStack>
-    </MudCard>
+            <MudButton Variant="Variant.Text" Color="Color.Tertiary" OnClick="GenerateAi" Disabled="_busy">Generate AI Recommendations</MudButton>
+        </div>
+    </section>
 
     @if (_stats is null)
     {
@@ -25,22 +28,24 @@
     }
     else
     {
-        <MudGrid>
+        <MudGrid Class="metric-grid">
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Lidarr Artists" Value="@_stats.LidarrArtists.ToString()" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Library Artists" Value="@_stats.LibraryArtists.ToString()" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Tracks Indexed" Value="@_stats.LibraryTracks.ToString()" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="New Recommendations" Value="@_stats.NewRecommendations.ToString()" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><StatCard Title="AI Recommendations" Value="@_stats.AiRecommendations.ToString()" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last Scan" Value="@When(_stats.LastScanAt)" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last Lidarr Sync" Value="@When(_stats.LastLidarrSyncAt)" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last AI Run" Value="@When(_stats.LastAiRunAt)" /></MudItem>
         </MudGrid>
 
-        <MudGrid>
-            <MudItem xs="12" md="7">
-                <MudCard Class="stat-card pa-4" Elevation="0">
-                    <MudText Typo="Typo.h5" Class="fw-800">First-run checklist</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Complete these steps once to get from an empty install to explainable recommendations.</MudText>
+        <MudGrid Class="dashboard-grid">
+            <MudItem xs="12" lg="8">
+                <MudCard Class="stat-card workflow-panel pa-4" Elevation="0">
+                    <div class="panel-heading">
+                        <div>
+                            <div class="eyebrow">Setup flow</div>
+                            <MudText Typo="Typo.h5" Class="fw-800">First-run checklist</MudText>
+                        </div>
+                        <span class="status-pill">@CompletedSteps(_stats) / 5 ready</span>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="panel-subtitle mb-3">Complete these once to move from an empty install to useful, explainable recommendations.</MudText>
                     <MudStack Spacing="2">
                         @ChecklistStep("Configure Lidarr", _stats.LidarrConfigured, "Save your Lidarr URL and API key in Settings.", "settings")
                         @ChecklistStep("Choose Lidarr add defaults", _stats.LidarrDefaultsConfigured, "Load root folders and quality/metadata profiles before adding artists.", "settings")
@@ -50,30 +55,29 @@
                     </MudStack>
                 </MudCard>
             </MudItem>
-            <MudItem xs="12" md="5">
-                <MudGrid>
-                    <MudItem xs="12">
-                        <MudCard Class="stat-card pa-4" Elevation="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last scan result</MudText>
-                            <MudText Typo="Typo.h6" Class="fw-800">@(_stats.LastScanStatus ?? "Never run")</MudText>
-                            <MudText Typo="Typo.body2">@_stats.LastScanFilesScanned files scanned, @_stats.LastScanFilesFailed failed.</MudText>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudCard Class="stat-card pa-4" Elevation="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last recommendation refresh</MudText>
-                            <MudText Typo="Typo.h6" Class="fw-800">@When(_stats.LastRecommendationAt)</MudText>
-                            <MudText Typo="Typo.body2">@_stats.NewRecommendations new recommendations are waiting for review.</MudText>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudCard Class="stat-card pa-4" Elevation="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Last AI result</MudText>
-                            <MudText Typo="Typo.h6" Class="fw-800">@(_stats.LastAiRunStatus ?? "Never run")</MudText>
-                            <MudText Typo="Typo.body2">AI remains optional; local recommendations work without it.</MudText>
-                        </MudCard>
-                    </MudItem>
-                </MudGrid>
+            <MudItem xs="12" lg="4">
+                <MudStack Spacing="3">
+                    <MudCard Class="stat-card now-panel pa-4" Elevation="0">
+                        <div class="eyebrow">Now playing</div>
+                        <MudText Typo="Typo.h6" Class="fw-800">System status</MudText>
+                        <div class="status-row"><span>Lidarr</span><strong>@(_stats.LidarrConfigured ? "Configured" : "Needs setup")</strong></div>
+                        <div class="status-row"><span>Last scan</span><strong>@(_stats.LastScanStatus ?? "Never run")</strong></div>
+                        <div class="status-row"><span>Files scanned</span><strong>@_stats.LastScanFilesScanned ok / @_stats.LastScanFilesFailed failed</strong></div>
+                        <div class="status-row"><span>AI provider</span><strong>@(_stats.AiEnabled ? "Enabled" : "Off by default")</strong></div>
+                    </MudCard>
+                    <MudCard Class="stat-card now-panel pa-4" Elevation="0">
+                        <div class="eyebrow">Refresh history</div>
+                        <div class="status-row"><span>Scan</span><strong>@When(_stats.LastScanAt)</strong></div>
+                        <div class="status-row"><span>Lidarr sync</span><strong>@When(_stats.LastLidarrSyncAt)</strong></div>
+                        <div class="status-row"><span>Local recs</span><strong>@When(_stats.LastRecommendationAt)</strong></div>
+                        <div class="status-row"><span>AI run</span><strong>@When(_stats.LastAiRunAt)</strong></div>
+                    </MudCard>
+                    <MudCard Class="stat-card now-panel accent-panel pa-4" Elevation="0">
+                        <div class="eyebrow">Recommendation mix</div>
+                        <MudText Typo="Typo.h4" Class="fw-800">@_stats.AiRecommendations</MudText>
+                        <MudText Typo="Typo.body2">AI recommendations stored. Local recommendations remain the baseline.</MudText>
+                    </MudCard>
+                </MudStack>
             </MudItem>
         </MudGrid>
 
@@ -115,12 +119,23 @@
     private Task GenerateAi() => Run(() => Recommendations.GenerateAiAsync());
     private static string When(DateTimeOffset? value) => value?.LocalDateTime.ToString("g") ?? "Never";
 
+    private static int CompletedSteps(DashboardStats stats)
+    {
+        var completed = 0;
+        if (stats.LidarrConfigured) completed++;
+        if (stats.LidarrDefaultsConfigured) completed++;
+        if (stats.LidarrArtists > 0) completed++;
+        if (stats.LibraryTracks > 0) completed++;
+        if (stats.NewRecommendations > 0 || stats.LastRecommendationAt is not null) completed++;
+        return completed;
+    }
+
     private RenderFragment ChecklistStep(string title, bool complete, string description, string href) => @<MudPaper Class="pa-3 onboarding-step" Outlined="true">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@(complete ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="@(complete ? Color.Success : Color.Warning)" />
+            <span class="timeline-dot @(complete ? "complete" : "open")"></span>
             <div class="flex-grow-1">
                 <MudText Typo="Typo.subtitle1" Class="fw-800">@title</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@description</MudText>
+                <MudText Typo="Typo.body2" Class="panel-subtitle">@description</MudText>
             </div>
             <MudButton Href="@href" Variant="Variant.Text" Color="@(complete ? Color.Success : Color.Primary)">@(complete ? "Review" : "Open")</MudButton>
         </MudStack>

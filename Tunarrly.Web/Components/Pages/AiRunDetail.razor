@@ -6,32 +6,41 @@
 
 @if (_run is null)
 {
-    <MudAlert Severity="Severity.Warning">AI run not found.</MudAlert>
+    <div class="page-stack">
+        <section class="page-hero detail-hero">
+            <div>
+                <div class="eyebrow">Missing record</div>
+                <MudText Typo="Typo.h3" Class="fw-800 page-title">AI run not found</MudText>
+                <MudText Typo="Typo.body1" Class="page-subtitle">This AI run may have been deleted or the link may be stale.</MudText>
+            </div>
+            <div class="page-actions"><MudButton Href="/ai-runs" Variant="Variant.Filled" Color="Color.Primary">Back to AI Runs</MudButton></div>
+        </section>
+    </div>
 }
 else
 {
-    <MudStack Spacing="4">
-        <MudCard Class="pa-5" Elevation="0">
-            <MudText Typo="Typo.h3" Class="fw-800">AI Run #@_run.Id</MudText>
+    <MudStack Spacing="4" Class="page-stack">
+        <section class="page-hero detail-hero">
+            <div>
+                <div class="eyebrow">AI audit detail</div>
+                <MudText Typo="Typo.h3" Class="fw-800 page-title">AI Run #@_run.Id</MudText>
+                <MudText Typo="Typo.body1" Class="page-subtitle">Sanitized provider request and stored output summary for this recommendation run.</MudText>
+            </div>
             <MudStack Row="true" Spacing="1" Class="mt-2">
                 <MudChip T="string" Color="@StatusColor(_run.Status)">@_run.Status</MudChip>
                 <MudChip T="string" Variant="Variant.Outlined">@_run.Model</MudChip>
             </MudStack>
-        </MudCard>
+        </section>
 
-        <MudAlert Severity="Severity.Info">
-            AI run details are sanitized. Tunarrly should not send local file paths, API keys, provider tokens, or raw filesystem structure to AI providers.
-        </MudAlert>
+        <div class="notice-panel"><MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" /> <span>AI run details are sanitized. Tunarrly should not send local file paths, API keys, provider tokens, or raw filesystem structure to AI providers.</span></div>
 
         <MudGrid>
             <MudItem xs="12" md="6">
-                <MudCard Class="pa-4" Elevation="0">
-                    <MudText Typo="Typo.h5">Provider</MudText>
-                    <MudText>@_run.ProviderBaseUrl</MudText>
-                    <MudText Typo="Typo.h6" Class="mt-4">Started</MudText>
-                    <MudText>@_run.StartedAt.LocalDateTime</MudText>
-                    <MudText Typo="Typo.h6" Class="mt-4">Finished</MudText>
-                    <MudText>@_run.FinishedAt?.LocalDateTime</MudText>
+                <MudCard Class="detail-panel" Elevation="0">
+                    <div class="eyebrow">Provider</div>
+                    <div class="data-pair"><span>Base URL</span><strong>@_run.ProviderBaseUrl</strong></div>
+                    <div class="data-pair"><span>Started</span><strong>@_run.StartedAt.LocalDateTime</strong></div>
+                    <div class="data-pair"><span>Finished</span><strong>@_run.FinishedAt?.LocalDateTime</strong></div>
                     @if (!string.IsNullOrWhiteSpace(_run.ErrorMessage))
                     {
                         <MudAlert Severity="Severity.Error" Class="mt-4">@_run.ErrorMessage</MudAlert>
@@ -39,13 +48,13 @@ else
                 </MudCard>
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="detail-panel code-panel" Elevation="0">
                     <MudText Typo="Typo.h5">Input Summary</MudText>
                     <pre>@Pretty(_run.InputSummaryJson)</pre>
                 </MudCard>
             </MudItem>
             <MudItem xs="12">
-                <MudCard Class="pa-4" Elevation="0">
+                <MudCard Class="detail-panel code-panel" Elevation="0">
                     <MudText Typo="Typo.h5">Output Summary</MudText>
                     <MudButton Variant="Variant.Outlined" Color="Color.Warning" Class="my-2" OnClick="ClearOutput">Delete stored output</MudButton>
                     <pre>@Pretty(_run.OutputJson)</pre>

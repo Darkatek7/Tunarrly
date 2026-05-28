@@ -115,8 +115,15 @@ static bool RequiresAuthRedirect(HttpContext context)
         path.StartsWithSegments("/health") ||
         path.StartsWithSegments("/ready")) return false;
     if (path.StartsWithSegments("/_framework") || path.StartsWithSegments("/_content")) return false;
+    if (IsStaticAsset(path)) return false;
     if (path.Value is "/favicon.png" or "/app.css" or "/Tunarrly.Web.styles.css") return false;
     return true;
+}
+
+static bool IsStaticAsset(PathString path)
+{
+    var extension = Path.GetExtension(path.Value);
+    return extension is ".css" or ".js" or ".map" or ".png" or ".jpg" or ".jpeg" or ".svg" or ".webp" or ".ico" or ".woff" or ".woff2";
 }
 
 static string SafeReturnUrl(string? returnUrl)

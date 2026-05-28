@@ -4,13 +4,21 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>Recommendations</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">Recommendations</MudText>
-<MudStack Row="true" Class="mb-4" Spacing="2">
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateLocal">Generate Local</MudButton>
-    <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi">Generate AI</MudButton>
-</MudStack>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Discovery queue</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">Recommendations</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Review explainable artist recommendations from local library evidence and optional AI enrichment.</MudText>
+    </div>
+    <div class="page-actions">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateLocal">Generate Local</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" OnClick="GenerateAi">Generate AI</MudButton>
+    </div>
+</section>
 
-<MudGrid Class="mb-4">
+<div class="filter-panel">
+<MudGrid>
     <MudItem xs="12" md="4">
         <MudSelect T="string" Label="Status" @bind-Value="_statusFilter">
             @foreach (var status in _statusFilters)
@@ -35,7 +43,9 @@
         </MudSelect>
     </MudItem>
 </MudGrid>
+</div>
 
+<div class="table-panel">
 <MudTable Items="FilteredRecommendations" Hover="true" Elevation="0">
     <HeaderContent>
         <MudTh>Artist</MudTh><MudTh>Score</MudTh><MudTh>Confidence</MudTh><MudTh>Source</MudTh><MudTh>Reasons</MudTh><MudTh>Status</MudTh><MudTh>Actions</MudTh>
@@ -69,6 +79,8 @@
         <MudAlert Severity="Severity.Info">No recommendations yet. Scan your library and generate local recommendations.</MudAlert>
     </NoRecordsContent>
 </MudTable>
+</div>
+</div>
 
 @code {
     private List<Recommendation> _recommendations = [];

@@ -4,12 +4,18 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>Library</PageTitle>
-<MudCard Class="hero-card pa-5 mb-4" Elevation="0">
-    <MudText Typo="Typo.h3" Class="fw-800">Library</MudText>
-    <MudText Typo="Typo.body1" Color="Color.Secondary">Read-only music metadata that powers local recommendations.</MudText>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Read-only index</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">Library</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Read-only music metadata that powers local recommendations.</MudText>
+    </div>
+    <div class="page-actions">
     <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" OnClick="Scan">Scan Library</MudButton>
-</MudCard>
-<MudGrid Class="mt-4">
+    </div>
+</section>
+<MudGrid>
     <MudItem xs="12" md="4"><StatCard Title="Artists" Value="@_artistCount.ToString()" /></MudItem>
     <MudItem xs="12" md="4"><StatCard Title="Albums" Value="@_albumCount.ToString()" /></MudItem>
     <MudItem xs="12" md="4"><StatCard Title="Tracks" Value="@_trackCount.ToString()" /></MudItem>
@@ -18,6 +24,7 @@
 {
     <MudAlert Severity="Severity.Info" Class="mt-4">No tracks indexed yet. Mount your library read-only, then scan it to build local recommendation evidence.</MudAlert>
 }
+</div>
 
 @code {
     private int _artistCount;

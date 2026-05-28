@@ -4,10 +4,15 @@
 @inject ISnackbar Snackbar
 
 <PageTitle>Settings</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">Settings</MudText>
-<MudAlert Severity="Severity.Warning" Class="mb-4">
-    Saved Lidarr keys and AI tokens are masked in the UI but stored as plaintext in the local SQLite database. Keep /app/data private and run Tunarrly only on a trusted LAN or behind authentication.
-</MudAlert>
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Instance controls</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">Settings</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Configure Lidarr defaults, library paths, and optional AI provider settings for this local instance.</MudText>
+    </div>
+</section>
+<div class="notice-panel warning"><MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" /> <span>Saved Lidarr keys and AI tokens are masked in the UI. Configure <code>SECRETS__ENCRYPTIONKEY</code> to encrypt saved secrets at rest and keep /app/data private.</span></div>
 
 @if (_lidarr is null || _ai is null || _library is null)
 {
@@ -15,6 +20,7 @@
 }
 else
 {
+    <div class="form-panel">
     <MudTabs Rounded="true" Elevation="0">
         <MudTabPanel Text="Lidarr">
             <MudGrid Class="mt-2">
@@ -73,7 +79,9 @@ else
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save settings</MudButton>
         <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearAllSecrets" Disabled="!(_lidarrSecretConfigured || _aiSecretConfigured)">Clear all saved secrets</MudButton>
     </MudStack>
+    </div>
 }
+</div>
 
 @code {
     private LidarrOptions? _lidarr;

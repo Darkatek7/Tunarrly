@@ -5,32 +5,45 @@
 <PageTitle>Login</PageTitle>
 
 <MudGrid Justify="Justify.Center" Class="login-page">
-    <MudItem xs="12" sm="8" md="5" lg="4">
-        <MudCard Class="hero-card pa-6" Elevation="0">
-            <MudText Typo="Typo.h3" Class="fw-800">Tunarrly</MudText>
-            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">Sign in to your local music discovery companion.</MudText>
+    <MudItem xs="12" md="9" lg="7">
+        <div class="login-shell">
+            <section class="login-pitch">
+                <div class="brand-mark large">T</div>
+                <div class="eyebrow">Private music radar</div>
+                <MudText Typo="Typo.h3" Class="fw-800">Tunarrly</MudText>
+                <MudText Typo="Typo.body1">Scan your own library, sync Lidarr, and find artists with evidence you can inspect.</MudText>
+                <div class="login-feature-list">
+                    <span>Read-only library mount</span>
+                    <span>Optional AI, off by default</span>
+                    <span>User-confirmed Lidarr adds</span>
+                </div>
+            </section>
+            <section class="login-form-panel">
+                <MudText Typo="Typo.h5" Class="fw-800">Sign in</MudText>
+                <MudText Typo="Typo.body2" Class="panel-subtitle mb-4">Use the local account configured for this instance.</MudText>
 
-            @if (!AuthOptions.Value.Enabled)
-            {
-                <MudAlert Severity="Severity.Info">Built-in login is disabled. Return to the dashboard.</MudAlert>
-                <MudButton Href="/" Class="mt-4" Variant="Variant.Filled" Color="Color.Primary">Open Dashboard</MudButton>
-            }
-            else
-            {
-                @if (HasError)
+                @if (!AuthOptions.Value.Enabled)
                 {
-                    <MudAlert Severity="Severity.Error" Class="mb-4">Invalid username or password.</MudAlert>
+                    <MudAlert Severity="Severity.Info">Built-in login is disabled. Return to the dashboard.</MudAlert>
+                    <MudButton Href="/" Class="mt-4" Variant="Variant.Filled" Color="Color.Primary">Open Dashboard</MudButton>
                 }
-                <form method="post" action="/login-submit">
-                    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-                    <label class="login-label" for="username">Username</label>
-                    <input id="username" class="login-input" name="username" autocomplete="username" autofocus />
-                    <label class="login-label mt-3" for="password">Password</label>
-                    <input id="password" class="login-input" name="password" type="password" autocomplete="current-password" />
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true">Sign in</MudButton>
-                </form>
-            }
-        </MudCard>
+                else
+                {
+                    @if (HasError)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">Invalid username or password.</MudAlert>
+                    }
+                    <form method="post" action="/login-submit">
+                        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                        <label class="login-label" for="username">Username</label>
+                        <input id="username" class="login-input" name="username" autocomplete="username" autofocus />
+                        <label class="login-label mt-3" for="password">Password</label>
+                        <input id="password" class="login-input" name="password" type="password" autocomplete="current-password" />
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true">Sign in</MudButton>
+                    </form>
+                }
+            </section>
+        </div>
     </MudItem>
 </MudGrid>
 

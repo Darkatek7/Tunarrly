@@ -12,6 +12,7 @@ async function signIn(page: Page) {
 test('built-in login signs in and returns to the requested page', async ({ page }) => {
   await page.goto('/settings');
   await expect(page).toHaveURL(/\/login\?returnUrl=%2Fsettings/);
+  await expect(page.locator('.login-shell')).toHaveCSS('display', 'grid');
 
   await page.getByLabel('Username').fill('admin');
   await page.getByLabel('Password').fill('Test1234.');

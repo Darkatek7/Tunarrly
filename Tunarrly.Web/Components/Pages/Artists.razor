@@ -2,8 +2,16 @@
 @inject IDbContextFactory<TunarrlyDbContext> DbFactory
 
 <PageTitle>Artists</PageTitle>
-<MudText Typo="Typo.h3" Class="fw-800 mb-4">Artists</MudText>
-<MudTabs Rounded="true">
+<div class="page-stack">
+<section class="page-hero">
+    <div>
+        <div class="eyebrow">Catalog view</div>
+        <MudText Typo="Typo.h3" Class="fw-800 page-title">Artists</MudText>
+        <MudText Typo="Typo.body1" Class="page-subtitle">Compare monitored Lidarr artists with artists discovered from indexed library metadata.</MudText>
+    </div>
+</section>
+<div class="table-panel">
+<MudTabs Rounded="true" Elevation="0">
     <MudTabPanel Text="Lidarr">
         <MudTable Items="_lidarr" Hover="true" Elevation="0">
             <HeaderContent><MudTh>Name</MudTh><MudTh>Monitored</MudTh><MudTh>Path</MudTh></HeaderContent>
@@ -23,6 +31,8 @@
         </MudTable>
     </MudTabPanel>
 </MudTabs>
+</div>
+</div>
 
 @code {
     private List<LidarrArtist> _lidarr = [];
