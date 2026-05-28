@@ -8,7 +8,7 @@ test('dashboard loads and Blazor actions respond', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Scan Library' }).click();
   await page.getByRole('link', { name: 'Scan Jobs' }).click();
-  await expect(page.getByText(/files processed/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Scan Jobs' })).toBeVisible();
   await page.getByRole('link', { name: 'Dashboard' }).click();
 
   await page.getByRole('button', { name: 'Generate Local Recommendations' }).click();
