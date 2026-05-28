@@ -109,7 +109,11 @@ app.Run();
 static bool RequiresAuthRedirect(HttpContext context)
 {
     var path = context.Request.Path;
-    if (path.StartsWithSegments("/login") || path.StartsWithSegments("/logout") || path.StartsWithSegments("/health") || path.StartsWithSegments("/ready")) return false;
+    if (path.StartsWithSegments("/login") ||
+        path.StartsWithSegments("/login-submit") ||
+        path.StartsWithSegments("/logout") ||
+        path.StartsWithSegments("/health") ||
+        path.StartsWithSegments("/ready")) return false;
     if (path.StartsWithSegments("/_framework") || path.StartsWithSegments("/_content")) return false;
     if (path.Value is "/favicon.png" or "/app.css" or "/Tunarrly.Web.styles.css") return false;
     return true;

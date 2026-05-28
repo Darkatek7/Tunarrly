@@ -2,6 +2,13 @@
 
 All notable changes to Tunarrly will be documented in this file.
 
+## v0.1.1 - 2026-05-28
+
+### Fixed
+
+- Fixed built-in login submissions being redirected back to `/login` before credentials were checked.
+- Added browser coverage for the auth-enabled login flow and return URL handling.
+
 ## v0.1.0 - 2026-05-28
 
 Initial MVP release.

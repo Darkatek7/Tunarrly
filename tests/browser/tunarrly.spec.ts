@@ -1,7 +1,28 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
+
+async function signIn(page: Page) {
+  await page.goto('/');
+  await expect(page.getByLabel('Username')).toBeVisible();
+  await page.getByLabel('Username').fill('admin');
+  await page.getByLabel('Password').fill('Test1234.');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByRole('heading', { name: /AI-assisted music discovery for Lidarr/i })).toBeVisible();
+}
+
+test('built-in login signs in and returns to the requested page', async ({ page }) => {
+  await page.goto('/settings');
+  await expect(page).toHaveURL(/\/login\?returnUrl=%2Fsettings/);
+
+  await page.getByLabel('Username').fill('admin');
+  await page.getByLabel('Password').fill('Test1234.');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+});
 
 test('dashboard loads and Blazor actions respond', async ({ page }) => {
-  await page.goto('/');
+  await signIn(page);
 
   await expect(page.getByRole('heading', { name: /AI-assisted music discovery for Lidarr/i })).toBeVisible();
   await expect(page.getByText('First-run checklist')).toBeVisible();
@@ -16,7 +37,7 @@ test('dashboard loads and Blazor actions respond', async ({ page }) => {
 });
 
 test('navigation and settings tabs are interactive', async ({ page }) => {
-  await page.goto('/');
+  await signIn(page);
 
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
