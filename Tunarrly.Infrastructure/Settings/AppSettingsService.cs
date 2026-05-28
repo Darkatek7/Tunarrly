@@ -84,6 +84,20 @@ public sealed class AppSettingsService(
     public Task SaveLibraryOptionsAsync(LibraryOptions options, CancellationToken cancellationToken = default)
         => SaveValuesAsync(new Dictionary<string, (string Value, bool IsSecret)> { ["Library:Path"] = (options.Path, false) }, cancellationToken);
 
+    public async Task ClearSecretAsync(string key, CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        var setting = await db.AppSettings.SingleOrDefaultAsync(x => x.Key == key && x.IsSecret, cancellationToken);
+        if (setting is null)
+        {
+            return;
+        }
+
+        setting.Value = string.Empty;
+        setting.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<Dictionary<string, string>> GetValuesAsync(string prefix, CancellationToken cancellationToken)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

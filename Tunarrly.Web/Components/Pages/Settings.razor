@@ -16,7 +16,10 @@ else
         <MudTabPanel Text="Lidarr">
             <MudGrid Class="mt-2">
                 <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_lidarr.BaseUrl" /></MudItem>
-                <MudItem xs="12" md="6"><MudTextField Label="API key" @bind-Value="_lidarr.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_lidarrSecretConfigured, "key")" /></MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="API key" @bind-Value="_lidarr.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_lidarrSecretConfigured, "key")" />
+                    <MudButton Size="Size.Small" Color="Color.Warning" Disabled="!_lidarrSecretConfigured" OnClick="ClearLidarrSecret">Clear saved key</MudButton>
+                </MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Music library path" @bind-Value="_library.Path" /></MudItem>
                 <MudItem xs="12" md="6">
                     <MudSelect T="string" Label="Default root folder" @bind-Value="_lidarr.DefaultRootFolder" HelperText="Load from Lidarr or type a path manually.">
@@ -51,7 +54,10 @@ else
             <MudGrid Class="mt-2">
                 <MudItem xs="12"><MudSwitch T="bool" Label="Enable AI recommendations" @bind-Value="_ai.Enabled" Color="Color.Primary" /></MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Base URL" @bind-Value="_ai.BaseUrl" /></MudItem>
-                <MudItem xs="12" md="6"><MudTextField Label="Token" @bind-Value="_ai.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_aiSecretConfigured, "token")" /></MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Token" @bind-Value="_ai.ApiKey" InputType="InputType.Password" HelperText="@SecretHelper(_aiSecretConfigured, "token")" />
+                    <MudButton Size="Size.Small" Color="Color.Warning" Disabled="!_aiSecretConfigured" OnClick="ClearAiSecret">Clear saved token</MudButton>
+                </MudItem>
                 <MudItem xs="12" md="6"><MudTextField Label="Model" @bind-Value="_ai.Model" /></MudItem>
                 <MudItem xs="12" md="6"><MudNumericField Label="Temperature" @bind-Value="_ai.Temperature" Min="0" Max="2" Step="0.1" /></MudItem>
                 <MudItem xs="12" md="4"><MudNumericField Label="Timeout seconds" @bind-Value="_ai.TimeoutSeconds" /></MudItem>
@@ -123,4 +129,18 @@ else
 
     private static string SecretHelper(bool configured, string name)
         => configured ? $"A {name} is saved. Leave blank to keep it." : $"Enter a {name}. It will be masked after saving.";
+
+    private async Task ClearLidarrSecret()
+    {
+        await AppSettings.ClearSecretAsync("Lidarr:ApiKey");
+        _lidarrSecretConfigured = false;
+        Snackbar.Add("Saved Lidarr API key cleared.", Severity.Success);
+    }
+
+    private async Task ClearAiSecret()
+    {
+        await AppSettings.ClearSecretAsync("AI:ApiKey");
+        _aiSecretConfigured = false;
+        Snackbar.Add("Saved AI token cleared.", Severity.Success);
+    }
 }
