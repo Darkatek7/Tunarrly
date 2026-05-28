@@ -23,6 +23,7 @@ public sealed class DashboardService(IDbContextFactory<TunarrlyDbContext> dbFact
             await db.Recommendations.CountAsync(x => x.Status == RecommendationStatuses.New, cancellationToken),
             await db.Recommendations.CountAsync(x => x.Source == RecommendationSources.Ai || x.Source == RecommendationSources.Hybrid, cancellationToken),
             scanJobs.OrderByDescending(x => x.StartedAt).Select(x => x.FinishedAt ?? x.StartedAt).FirstOrDefault(),
+            (await db.LidarrArtists.ToListAsync(cancellationToken)).OrderByDescending(x => x.LastSyncedAt).Select(x => (DateTimeOffset?)x.LastSyncedAt).FirstOrDefault(),
             aiRuns.OrderByDescending(x => x.StartedAt).Select(x => (DateTimeOffset?)x.StartedAt).FirstOrDefault());
     }
 }

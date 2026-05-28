@@ -30,6 +30,10 @@
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Library Artists" Value="@_stats.LibraryArtists.ToString()" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="Tracks Indexed" Value="@_stats.LibraryTracks.ToString()" /></MudItem>
             <MudItem xs="12" sm="6" md="3"><StatCard Title="New Recommendations" Value="@_stats.NewRecommendations.ToString()" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="AI Recommendations" Value="@_stats.AiRecommendations.ToString()" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last Scan" Value="@When(_stats.LastScanAt)" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last Lidarr Sync" Value="@When(_stats.LastLidarrSyncAt)" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><StatCard Title="Last AI Run" Value="@When(_stats.LastAiRunAt)" /></MudItem>
         </MudGrid>
         <MudGrid>
             <MudItem xs="12" md="6">
@@ -67,4 +71,5 @@
     private Task SyncLidarr() => Run(() => LidarrSync.SyncArtistsAsync());
     private Task GenerateLocal() => Run(() => Recommendations.GenerateLocalAsync());
     private Task GenerateAi() => Run(() => Recommendations.GenerateAiAsync());
+    private static string When(DateTimeOffset? value) => value?.LocalDateTime.ToString("g") ?? "Never";
 }

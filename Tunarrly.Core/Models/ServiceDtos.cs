@@ -15,6 +15,7 @@ public sealed record DashboardStats(
     int NewRecommendations,
     int AiRecommendations,
     DateTimeOffset? LastScanAt,
+    DateTimeOffset? LastLidarrSyncAt,
     DateTimeOffset? LastAiRunAt);
 
 public sealed record LidarrArtistDto(

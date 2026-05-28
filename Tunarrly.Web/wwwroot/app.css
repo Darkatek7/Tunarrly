@@ -40,6 +40,20 @@ a {
     border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
+pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: rgba(15, 23, 42, 0.72);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+@media (max-width: 720px) {
+    .mud-typography-h2 {
+        font-size: 2rem;
+    }
+}
+
 #blazor-error-ui {
     background: #7f1d1d;
     bottom: 0;
