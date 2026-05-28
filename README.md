@@ -24,7 +24,7 @@ This project is early MVP software. Run it on a trusted LAN or behind HTTPS and 
 
 ## Screenshots
 
-Live screenshots from the current MVP:
+Safe screenshots from the current MVP, captured with placeholder configuration and no real secrets:
 
 ![Login](docs/screenshots/login.png)
 ![Dashboard](docs/screenshots/dashboard.png)
